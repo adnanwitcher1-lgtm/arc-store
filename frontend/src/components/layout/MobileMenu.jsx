@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { X } from "lucide-react";
@@ -7,7 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 export default function MobileMenu({ open, onClose, categories }) {
   const { user, logout } = useAuth();
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -81,6 +82,7 @@ export default function MobileMenu({ open, onClose, categories }) {
           </motion.aside>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

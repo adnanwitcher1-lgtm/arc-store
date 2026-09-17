@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { fetchCategories } from "../api/products";
 
 let cache = null;
-let inFlight = null;
 
 export function useCategories() {
   const [categories, setCategories] = useState(cache || []);
@@ -10,13 +9,26 @@ export function useCategories() {
 
   useEffect(() => {
     if (cache) return;
-    inFlight = inFlight || fetchCategories();
-    inFlight
+
+    let cancelled = false;
+    setLoading(true);
+
+    fetchCategories()
       .then((data) => {
+        if (cancelled) return;
         cache = data;
         setCategories(data);
       })
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        console.error("Failed to load categories:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return { categories, loading };
