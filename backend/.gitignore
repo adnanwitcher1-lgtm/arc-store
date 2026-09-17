@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+staticfiles/
+media/
+!media/.gitkeep
+venv/
+.venv/
+*.sqlite3-journal
+db.sqlite3

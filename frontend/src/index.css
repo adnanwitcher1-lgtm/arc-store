@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #211d19;
+  --color-ink-soft: #4a453f;
+  --color-paper: #f3f1ec;
+  --color-paper-dim: #eae6dc;
+  --color-pine: #1e4638;
+  --color-pine-dark: #16352a;
+  --color-on-pine: #f3f1ec;
+  --color-brass: #b08a3e;
+  --color-stone: #8a8378;
+  --color-brick: #9c4a34;
+  --color-on-brick: #faf8f4;
+  --color-band: #211d19;
+  --color-band-fg: #f3f1ec;
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Gold & Black — dark, warm, premium */
+[data-theme="gold"] {
+  --color-ink: #f3efe6;
+  --color-ink-soft: #c9bfa8;
+  --color-paper: #15120d;
+  --color-paper-dim: #201a12;
+  --color-pine: #d9b64e;
+  --color-pine-dark: #b3922e;
+  --color-on-pine: #15120d;
+  --color-brass: #e8c468;
+  --color-stone: #8f8672;
+  --color-brick: #d96a4f;
+  --color-band: #0b0906;
+  --color-band-fg: #d9b64e;
+}
+
+/* Forest — deep green, fresh accent */
+[data-theme="forest"] {
+  --color-ink: #f1f5f0;
+  --color-ink-soft: #b9c7be;
+  --color-paper: #0e2019;
+  --color-paper-dim: #14291f;
+  --color-pine: #3fa66b;
+  --color-pine-dark: #2e7d50;
+  --color-on-pine: #f1f5f0;
+  --color-brass: #c9a24b;
+  --color-stone: #7e9186;
+  --color-brick: #c1543a;
+  --color-band: #081410;
+  --color-band-fg: #f1f5f0;
+}
+
+/* Midnight — deep navy, cool accent */
+[data-theme="midnight"] {
+  --color-ink: #eef2f8;
+  --color-ink-soft: #aebbd0;
+  --color-paper: #0c1526;
+  --color-paper-dim: #121d33;
+  --color-pine: #2f6fed;
+  --color-pine-dark: #2456be;
+  --color-on-pine: #eef2f8;
+  --color-brass: #c9a24b;
+  --color-stone: #7c8aa3;
+  --color-brick: #d9584b;
+  --color-band: #070d18;
+  --color-band-fg: #eef2f8;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background-color: var(--color-pine);
+  color: var(--color-on-pine);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-pine);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

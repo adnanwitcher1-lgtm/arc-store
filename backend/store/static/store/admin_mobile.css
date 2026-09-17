@@ -1,0 +1,46 @@
+/* Mobile refinements for the JH Store admin.
+   Django's admin is responsive by default; these rules just trim busy changelists
+   down to the columns that matter most on a phone, and make tap targets bigger. */
+
+@media (max-width: 767px) {
+  /* Product list: keep thumbnail, name, price, stock, active/featured toggles.
+     Drop the columns that are nice-to-have on desktop but crowd a phone screen. */
+  .column-compare_at_price, .field-compare_at_price,
+  .column-discount_badge, .field-discount_badge,
+  .column-rating_display, .field-rating_display,
+  .column-category, .field-category {
+    display: none;
+  }
+
+  /* Order list: keep id, customer, status, total. Payment method and paid-flag
+     are one tap away on the order detail page. */
+  .column-payment_method, .field-payment_method,
+  .column-is_paid, .field-is_paid {
+    display: none;
+  }
+
+  /* Let wide tables scroll smoothly instead of squeezing/wrapping awkwardly. */
+  .results {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Bigger, easier-to-tap buttons and inputs. */
+  .button, input[type="submit"], input[type="button"], .submit-row a,
+  select, .vTextField, .vLargeTextField {
+    min-height: 44px;
+    font-size: 16px; /* also stops iOS Safari auto-zooming into the field */
+  }
+
+  /* Inline "Add another" links get more breathing room to tap accurately. */
+  .add-row a {
+    display: inline-block;
+    padding: 10px 6px;
+  }
+
+  /* Thumbnails stay compact but readable next to the product name. */
+  .field-thumbnail img {
+    height: 36px;
+    width: 36px;
+  }
+}

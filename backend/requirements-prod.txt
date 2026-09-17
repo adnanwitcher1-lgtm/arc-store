@@ -1,0 +1,8 @@
+# Install this ONLY on your production host (e.g. Render), in addition to requirements.txt:
+#   pip install -r requirements.txt -r requirements-prod.txt
+#
+# It's kept separate because psycopg2-binary needs a C build toolchain to install from
+# source, which regularly breaks local Windows setups where it isn't even needed (local
+# development uses SQLite, not Postgres). Render's Linux build environment installs it
+# from a prebuilt wheel without any issue.
+psycopg2-binary>=2.9.10
