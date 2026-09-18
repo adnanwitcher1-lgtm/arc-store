@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 
-const PHONE = "923431740756"; // 03431740756 in international format
+const PHONE = "923714905398"; // 03431740756 in international format
 const MESSAGE = "Hi! I have a question about a product.";
 
 export default function WhatsAppButton() {
