@@ -8,3 +8,5 @@ whitenoise==6.8.2
 dj-database-url==2.3.0
 requests==2.32.3
 python-dotenv==1.0.1
+django-cloudinary-storage==0.3.0
+cloudinary==1.44.1
