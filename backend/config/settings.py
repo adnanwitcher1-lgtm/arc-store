@@ -217,6 +217,9 @@ if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
     EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
     EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
+    # Without a timeout, a slow/unreachable SMTP server hangs forever and can crash
+    # the whole worker (fatal on Render's free tier, which runs a single worker).
+    EMAIL_TIMEOUT = 10
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
