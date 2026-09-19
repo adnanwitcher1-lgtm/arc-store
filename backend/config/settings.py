@@ -11,8 +11,22 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+import socket
 from datetime import timedelta
 from pathlib import Path
+
+# Render's containers have no IPv6 route, but Python's socket resolver tries IPv6
+# addresses first for hosts like smtp.gmail.com — causing an immediate "Network is
+# unreachable" error instead of falling back to IPv4. Forcing IPv4-only resolution
+# fixes outbound SMTP (and is harmless for everything else).
+_original_getaddrinfo = socket.getaddrinfo
+
+
+def _ipv4_only_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    return _original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+
+
+socket.getaddrinfo = _ipv4_only_getaddrinfo
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
