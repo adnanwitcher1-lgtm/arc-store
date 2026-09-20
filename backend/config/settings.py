@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'cloudinary_storage',
     'cloudinary',
+    'anymail',
     'rest_framework',
     'corsheaders',
     'store',
@@ -221,23 +222,17 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Email — order confirmations (to the customer) and new-order alerts (to the store owner).
-# Defaults to printing emails to the console so it works out of the box with zero setup.
-# Set EMAIL_HOST_USER + EMAIL_HOST_PASSWORD (a Gmail "App Password", not your normal password)
-# to actually send real email — see DEPLOYMENT.md.
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
-    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
-    EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
-    # Without a timeout, a slow/unreachable SMTP server hangs forever and can crash
-    # the whole worker (fatal on Render's free tier, which runs a single worker).
-    EMAIL_TIMEOUT = 10
+# Render blocks outbound raw SMTP connections (port 587 times out), so email is sent via
+# Resend's HTTP API instead — a normal HTTPS request, which is never blocked.
+# Set RESEND_API_KEY to send real email; otherwise emails print to the console (dev default).
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+if RESEND_API_KEY:
+    EMAIL_BACKEND = "anymail.backends.resend.EmailBackend"
+    ANYMAIL = {"RESEND_API_KEY": RESEND_API_KEY}
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "orders@arc-store.local")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "orders@arc-store.local")
 # Where new-order alerts go — the store owner's inbox.
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "mumtazahmadfaheem@gmail.com")
 
