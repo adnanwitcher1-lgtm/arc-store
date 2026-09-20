@@ -48,6 +48,9 @@ export default function Footer() {
               <Link to="/wishlist" className="hover:text-band-fg">Wishlist</Link>
             </li>
             <li>
+              <Link to="/track-order" className="hover:text-band-fg">Track order</Link>
+            </li>
+            <li>
               <Link to={user ? "/orders" : "/login"} className="hover:text-band-fg">
                 {user ? "Order history" : "Log in"}
               </Link>
