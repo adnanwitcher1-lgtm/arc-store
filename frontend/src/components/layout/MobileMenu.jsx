@@ -53,6 +53,9 @@ export default function MobileMenu({ open, onClose, categories }) {
             </nav>
 
             <div className="mt-auto flex flex-col gap-1 border-t border-ink/10 pt-4 text-sm">
+              <Link to="/track-order" onClick={onClose} className="rounded-lg px-2 py-2.5 hover:bg-paper-dim">
+                Track order
+              </Link>
               {user ? (
                 <>
                   <Link to="/orders" onClick={onClose} className="rounded-lg px-2 py-2.5 hover:bg-paper-dim">
