@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Orders from "./pages/Orders";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import TrackOrder from "./pages/TrackOrder";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
@@ -36,6 +37,7 @@ export default function App() {
                   <Route path="/register" element={<Register />} />
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/order-confirmation/:id" element={<OrderConfirmation />} />
+                  <Route path="/track-order" element={<TrackOrder />} />
                   <Route path="*" element={<NotFound />} />
                 </Route>
               </Routes>
