@@ -14,3 +14,8 @@ export async function fetchOrder(id) {
   const { data } = await client.get(`/orders/${id}/`);
   return data;
 }
+
+export async function trackOrder({ orderId, email }) {
+  const { data } = await client.post("/orders/track/", { order_id: orderId, email });
+  return data;
+}
