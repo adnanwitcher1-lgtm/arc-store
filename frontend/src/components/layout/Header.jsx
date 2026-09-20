@@ -141,7 +141,10 @@ export default function Header() {
               {cat.name}
             </Link>
           ))}
-          <Link to="/shop?featured=true" className="ml-auto font-medium text-brick hover:text-brick/80">
+          <Link to="/track-order" className="ml-auto font-medium text-ink-soft hover:text-pine">
+            Track order
+          </Link>
+          <Link to="/shop?featured=true" className="font-medium text-brick hover:text-brick/80">
             Deals
           </Link>
         </Container>
