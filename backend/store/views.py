@@ -261,6 +261,27 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
 
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
+    @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
+    def track(self, request):
+        """Public order tracking — no login required. Matches an order only when both
+        the order number AND the email used at checkout are correct, so a guessed order
+        number alone can't leak someone else's order details."""
+        order_id = str(request.data.get("order_id", "")).strip()
+        email = str(request.data.get("email", "")).strip()
+        if not order_id or not email:
+            return Response(
+                {"detail": "Please enter both your order number and email."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            order = Order.objects.prefetch_related("items").get(pk=order_id, email__iexact=email)
+        except (Order.DoesNotExist, ValueError):
+            return Response(
+                {"detail": "We couldn't find an order with that number and email."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(OrderSerializer(order).data)
+
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
