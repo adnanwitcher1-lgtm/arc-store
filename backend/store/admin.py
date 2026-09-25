@@ -33,6 +33,18 @@ class ProductOptionInline(admin.StackedInline):
     show_change_link = True
 
 
+@admin.register(ProductOption)
+class ProductOptionAdmin(admin.ModelAdmin):
+    list_display = ("name", "product", "order", "value_count")
+    list_filter = ("product__category",)
+    search_fields = ("name", "product__name")
+    inlines = [ProductOptionValueInline]
+
+    def value_count(self, obj):
+        return obj.values.count()
+    value_count.short_description = "Values"
+
+
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ("name", "product_count", "is_active", "order")
