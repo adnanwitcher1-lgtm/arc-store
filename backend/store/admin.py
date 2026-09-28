@@ -3,7 +3,7 @@ from django.utils.html import format_html
 
 from .models import (
     Category, Product, ProductImage, ProductOption, ProductOptionValue,
-    Review, WishlistItem, Cart, CartItem, Order, OrderItem,
+    Review, WishlistItem, Cart, CartItem, Order, OrderItem, ContactMessage,
 )
 
 
@@ -21,6 +21,7 @@ class ProductImageInline(admin.TabularInline):
 
 
 class ProductOptionValueInline(admin.TabularInline):
+    """For colors fill 'hex_color' (e.g. #C0392B). Common color names (Red, Navy, Sage...) work even without it."""
     model = ProductOptionValue
     extra = 1
     fields = ("label", "hex_color", "swatch_image", "order")
@@ -60,6 +61,29 @@ class CategoryAdmin(admin.ModelAdmin):
     product_count.short_description = "Products"
 
 
+
+# ---------------------------------------------------------------------------
+# Quick-add helpers: select products in the list -> Action dropdown -> Go.
+# ---------------------------------------------------------------------------
+CLOTHING_SIZES = ["S", "M", "L", "XL", "XXL"]
+SHOE_SIZES = [str(n) for n in range(38, 47)]  # EU 38-46
+BASIC_COLORS = [
+    ("Black", "#1C1C1E"), ("White", "#F2F1EC"), ("Red", "#C0392B"), ("Blue", "#2F6FED"),
+    ("Navy", "#26314F"), ("Green", "#2E7D50"), ("Grey", "#8E8E93"), ("Brown", "#6B4A34"),
+]
+
+
+def _add_option(product, name, values):
+    """Create an option group (e.g. Size) with its values, unless the product already has one."""
+    if product.options.filter(name__iexact=name).exists():
+        return False
+    option = ProductOption.objects.create(product=product, name=name, order=product.options.count())
+    for i, value in enumerate(values):
+        label, hex_color = value if isinstance(value, tuple) else (value, "")
+        ProductOptionValue.objects.create(option=option, label=label, hex_color=hex_color, order=i)
+    return True
+
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
@@ -72,6 +96,7 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ("name", "sku", "description")
     prepopulated_fields = {"slug": ("name",)}
     inlines = [ProductImageInline, ProductOptionInline]
+    actions = ["add_clothing_sizes", "add_shoe_sizes", "add_basic_colors"]
 
     class Media:
         css = {"all": ("store/admin_mobile.css",)}
@@ -81,6 +106,21 @@ class ProductAdmin(admin.ModelAdmin):
         ("Description", {"fields": ("short_description", "description", "specifications")}),
         ("Pricing & stock", {"fields": ("price", "compare_at_price", "stock")}),
     )
+
+    @admin.action(description="Add sizes: S, M, L, XL, XXL")
+    def add_clothing_sizes(self, request, queryset):
+        added = sum(_add_option(p, "Size", CLOTHING_SIZES) for p in queryset)
+        self.message_user(request, f"Size option added to {added} product(s) (products that already had one were skipped).")
+
+    @admin.action(description="Add shoe sizes: 38 to 46")
+    def add_shoe_sizes(self, request, queryset):
+        added = sum(_add_option(p, "Size", SHOE_SIZES) for p in queryset)
+        self.message_user(request, f"Shoe sizes added to {added} product(s) (products that already had one were skipped).")
+
+    @admin.action(description="Add basic colors (Black, White, Red, Blue...)")
+    def add_basic_colors(self, request, queryset):
+        added = sum(_add_option(p, "Color", BASIC_COLORS) for p in queryset)
+        self.message_user(request, f"Color option added to {added} product(s) (products that already had one were skipped).")
 
     def thumbnail(self, obj):
         first = obj.images.first()
@@ -108,6 +148,15 @@ class ReviewAdmin(admin.ModelAdmin):
     list_editable = ("is_approved",)
     list_filter = ("is_approved", "rating")
     search_fields = ("product__name", "user__username", "comment")
+
+
+@admin.register(ContactMessage)
+class ContactMessageAdmin(admin.ModelAdmin):
+    list_display = ("name", "email", "subject", "is_resolved", "created_at")
+    list_editable = ("is_resolved",)
+    list_filter = ("is_resolved",)
+    search_fields = ("name", "email", "subject", "message")
+    readonly_fields = ("name", "email", "phone", "subject", "message", "created_at")
 
 
 @admin.register(WishlistItem)
