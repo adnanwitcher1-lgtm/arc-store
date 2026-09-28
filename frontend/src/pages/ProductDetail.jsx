@@ -14,6 +14,7 @@ import ProductTabs from "../components/product/ProductTabs";
 import ProductGrid from "../components/product/ProductGrid";
 import { fetchProduct, fetchProducts } from "../api/products";
 import { formatPrice } from "../lib/format";
+import { isColorOption } from "../lib/colors";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useAuth } from "../context/AuthContext";
@@ -28,6 +29,7 @@ export default function ProductDetail() {
   const [selected, setSelected] = useState({});
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
 
   const { addItem } = useCart();
   const { user } = useAuth();
@@ -38,7 +40,13 @@ export default function ProductDetail() {
     fetchProduct(slug)
       .then((data) => {
         setProduct(data);
-        setSelected(Object.fromEntries(data.options.map((o) => [o.id, o.values[0]?.id])));
+        // Colours start on the first swatch; sizes (and other options) must be picked by the customer.
+        setSelected(
+          Object.fromEntries(
+            data.options.filter(isColorOption).map((o) => [o.id, o.values[0]?.id])
+          )
+        );
+        setShowErrors(false);
         setQuantity(1);
         fetchProducts({ category: data.category_slug }).then((res) =>
           setRelated(res.results.filter((p) => p.slug !== slug).slice(0, 4))
@@ -71,6 +79,12 @@ export default function ProductDetail() {
   const wishlisted = wishlistIds.has(product.id);
 
   async function handleAddToCart(goToCart) {
+    const missing = product.options.filter((o) => o.values.length > 0 && !selected[o.id]);
+    if (missing.length > 0) {
+      setShowErrors(true);
+      showToast(`Please select ${missing.map((o) => o.name.toLowerCase()).join(" and ")}`, "error");
+      return;
+    }
     setAdding(true);
     try {
       await addItem(product.id, quantity, Object.values(selected).filter(Boolean));
@@ -151,6 +165,7 @@ export default function ProductDetail() {
                   key={option.id}
                   option={option}
                   selectedId={selected[option.id]}
+                  error={showErrors && !selected[option.id]}
                   onSelect={(valueId) => setSelected((s) => ({ ...s, [option.id]: valueId }))}
                 />
               ))}
