@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Heart } from "lucide-react";
 import RatingStars from "./RatingStars";
 import { formatPrice } from "../../lib/format";
+import { resolveColor, needsBorder } from "../../lib/colors";
 import { useWishlist } from "../../context/WishlistContext";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
@@ -73,6 +74,24 @@ export default function ProductCard({ product }) {
         <div className="mt-1">
           <RatingStars rating={product.average_rating} reviewCount={product.review_count} size={13} />
         </div>
+        {product.colors?.length > 0 && (
+          <div className="mt-2 flex items-center gap-1.5" aria-label="Available colors">
+            {product.colors.slice(0, 5).map((c) => {
+              const hex = resolveColor(c);
+              return hex ? (
+                <span
+                  key={c.id}
+                  title={c.label}
+                  className={`h-4 w-4 rounded-full ${needsBorder(hex) ? "border border-ink/25" : ""}`}
+                  style={{ backgroundColor: hex }}
+                />
+              ) : null;
+            })}
+            {product.colors.length > 5 && (
+              <span className="text-xs text-stone">+{product.colors.length - 5}</span>
+            )}
+          </div>
+        )}
         <div className="mt-1.5 flex items-baseline gap-2">
           <span className="font-semibold text-ink">{formatPrice(product.price)}</span>
           {product.compare_at_price && (
