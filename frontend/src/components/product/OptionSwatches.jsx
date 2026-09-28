@@ -1,15 +1,29 @@
-const isColorOption = (option) => {
-  const name = (option.name || "").toLowerCase();
-  if (name.includes("color") || name.includes("colour")) return true;
-  // fallback: if every value actually has a hex_color, treat as color
-  return option.values.length > 0 && option.values.every((v) => v.hex_color);
-};
+import { isColorOption, resolveColor, needsBorder } from "../../lib/colors";
 
-function ColorSwatches({ option, selectedId, onSelect }) {
+function ColorOption({ option, selectedId, onSelect }) {
   return (
-    <div className="mt-2 flex flex-wrap gap-2.5">
+    <div className="mt-2.5 flex flex-wrap gap-2.5">
       {option.values.map((value) => {
         const active = value.id === selectedId;
+        const hex = resolveColor(value);
+
+        // Unknown colour name and no hex saved -> show as a readable text chip instead of a blank dot.
+        if (!hex) {
+          return (
+            <button
+              key={value.id}
+              type="button"
+              onClick={() => onSelect(value.id)}
+              aria-pressed={active}
+              className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+                active ? "border-pine bg-pine text-on-pine" : "border-ink/20 text-ink hover:border-ink"
+              }`}
+            >
+              {value.label}
+            </button>
+          );
+        }
+
         return (
           <button
             key={value.id}
@@ -18,13 +32,13 @@ function ColorSwatches({ option, selectedId, onSelect }) {
             title={value.label}
             aria-label={value.label}
             aria-pressed={active}
-            className={`h-9 w-9 rounded-full border-2 transition-shadow ${
-              active ? "border-pine ring-2 ring-pine/15" : "border-transparent"
+            className={`h-10 w-10 rounded-full border-2 p-0.5 transition-all ${
+              active ? "border-pine ring-2 ring-pine/20" : "border-transparent hover:border-ink/30"
             }`}
           >
             <span
-              className="block h-full w-full rounded-full border border-ink/10"
-              style={{ backgroundColor: value.hex_color || "#EAE6DC" }}
+              className={`block h-full w-full rounded-full ${needsBorder(hex) ? "border border-ink/25" : ""}`}
+              style={{ backgroundColor: hex }}
             />
           </button>
         );
@@ -33,33 +47,47 @@ function ColorSwatches({ option, selectedId, onSelect }) {
   );
 }
 
-function SizeDropdown({ option, selectedId, onSelect }) {
+function ChipOption({ option, selectedId, onSelect }) {
   return (
-    <select
-      value={selectedId || ""}
-      onChange={(e) => onSelect(Number(e.target.value))}
-      aria-label={option.name}
-      className="mt-2 w-full max-w-[220px] rounded-lg border border-ink/15 bg-white px-3 py-2.5 text-sm text-ink focus:border-pine focus:outline-none focus:ring-2 focus:ring-pine/15"
-    >
-      {option.values.map((value) => (
-        <option key={value.id} value={value.id}>
-          {value.label}
-        </option>
-      ))}
-    </select>
+    <div className="mt-2.5 flex flex-wrap gap-2.5">
+      {option.values.map((value) => {
+        const active = value.id === selectedId;
+        return (
+          <button
+            key={value.id}
+            type="button"
+            onClick={() => onSelect(value.id)}
+            aria-pressed={active}
+            className={`min-w-[3rem] rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
+              active
+                ? "border-pine bg-pine text-on-pine"
+                : "border-ink/20 bg-paper text-ink hover:border-ink"
+            }`}
+          >
+            {value.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
-export default function OptionSwatches({ option, selectedId, onSelect }) {
+export default function OptionSwatches({ option, selectedId, onSelect, error = false }) {
   const asColor = isColorOption(option);
+  const selectedLabel = option.values.find((v) => v.id === selectedId)?.label;
+
   return (
     <div>
-      <p className="text-sm font-medium text-ink">{option.name}</p>
+      <p className="text-sm font-medium text-ink">
+        {option.name}
+        {selectedLabel && <span className="ml-1.5 font-normal text-stone">— {selectedLabel}</span>}
+      </p>
       {asColor ? (
-        <ColorSwatches option={option} selectedId={selectedId} onSelect={onSelect} />
+        <ColorOption option={option} selectedId={selectedId} onSelect={onSelect} />
       ) : (
-        <SizeDropdown option={option} selectedId={selectedId} onSelect={onSelect} />
+        <ChipOption option={option} selectedId={selectedId} onSelect={onSelect} />
       )}
+      {error && <p className="mt-2 text-sm text-brick">Please select a {option.name.toLowerCase()}.</p>}
     </div>
   );
 }
