@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     CategoryViewSet, ProductViewSet, OrderViewSet,
     CartView, CartItemListCreateView, CartItemDetailView, CartMergeView,
-    WishlistView, WishlistToggleView, RegisterView, MeView,
+    WishlistView, WishlistToggleView, RegisterView, MeView, ContactView,
 )
 
 router = DefaultRouter()
@@ -22,4 +22,5 @@ urlpatterns = [
     path("wishlist/toggle/", WishlistToggleView.as_view(), name="wishlist-toggle"),
     path("auth/register/", RegisterView.as_view(), name="register"),
     path("auth/me/", MeView.as_view(), name="me"),
+    path("contact/", ContactView.as_view(), name="contact"),
 ]
