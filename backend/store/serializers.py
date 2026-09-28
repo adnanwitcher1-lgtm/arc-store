@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from .models import (
     Category, Product, ProductImage, ProductOption, ProductOptionValue,
-    Review, WishlistItem, Cart, CartItem, Order, OrderItem,
+    Review, WishlistItem, Cart, CartItem, Order, OrderItem, ContactMessage,
 )
 
 User = get_user_model()
@@ -61,14 +61,25 @@ class ProductListSerializer(serializers.ModelSerializer):
     average_rating = serializers.ReadOnlyField()
     review_count = serializers.ReadOnlyField()
     in_stock = serializers.ReadOnlyField()
+    colors = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = [
             "id", "name", "slug", "short_description", "price", "compare_at_price",
             "discount_percent", "category_name", "category_slug", "primary_image",
-            "average_rating", "review_count", "is_featured", "in_stock",
+            "average_rating", "review_count", "is_featured", "in_stock", "colors",
         ]
+
+    def get_colors(self, obj):
+        """Colour choices shown as small dots on the product card.
+        Uses the prefetched options, so this adds no extra queries."""
+        colors = []
+        for option in obj.options.all():
+            if "colo" in option.name.lower():  # matches Color / Colour / Strap Color
+                for value in option.values.all():
+                    colors.append({"id": value.id, "label": value.label, "hex_color": value.hex_color})
+        return colors
 
     def get_primary_image(self, obj):
         first = obj.images.first()
@@ -219,3 +230,10 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "username", "email", "first_name", "last_name"]
+
+
+class ContactMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactMessage
+        fields = ["id", "name", "email", "phone", "subject", "message"]
+        read_only_fields = ["id"]
