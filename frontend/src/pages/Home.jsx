@@ -16,11 +16,26 @@ const reveal = {
 
 export default function Home() {
   const { categories } = useCategories();
-  const [featured, setFeatured] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
 
+  // Every product is shown on the home page itself; "Load more" fetches the next page.
   useEffect(() => {
-    fetchProducts({ featured: true }).then((data) => setFeatured(data.results));
-  }, []);
+    setLoading(true);
+    fetchProducts({ page })
+      .then((data) => {
+        setProducts((prev) => {
+          const seen = new Set(prev.map((p) => p.id));
+          return [...prev, ...data.results.filter((p) => !seen.has(p.id))];
+        });
+        setHasMore(Boolean(data.next));
+        setTotal(data.count);
+      })
+      .finally(() => setLoading(false));
+  }, [page]);
 
   return (
     <PageFade>
@@ -39,7 +54,7 @@ export default function Home() {
           </svg>
         </motion.div>
 
-        <Container className="relative py-16 sm:py-24">
+        <Container className="relative py-10 sm:py-16">
           <div className="max-w-xl">
             <motion.h1
               initial={{ opacity: 0, y: 14 }}
@@ -76,7 +91,7 @@ export default function Home() {
       </section>
 
       {categories.length > 0 && (
-        <Container className="pb-16">
+        <Container className="pb-10">
           <motion.div
             className="flex flex-wrap gap-3"
             initial="hidden"
@@ -97,24 +112,26 @@ export default function Home() {
         </Container>
       )}
 
-      {featured.length > 0 && (
-        <Container className="pb-20">
-          <motion.div
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-80px" }}
-            variants={reveal}
-          >
-            <div className="mb-8 flex items-end justify-between">
-              <h2 className="text-2xl font-semibold text-ink">Today's picks</h2>
-              <Link to="/shop?featured=true" className="text-sm font-medium text-pine">
-                View all
-              </Link>
-            </div>
-            <ProductGrid products={featured} />
-          </motion.div>
-        </Container>
-      )}
+      <Container className="pb-20">
+        <div className="mb-8 flex items-end justify-between">
+          <h2 className="text-2xl font-semibold text-ink">All products</h2>
+          {total > 0 && <span className="text-sm text-stone">{total} products</span>}
+        </div>
+
+        {loading && products.length === 0 ? (
+          <div className="py-16 text-center text-stone">Loading products…</div>
+        ) : (
+          <ProductGrid products={products} />
+        )}
+
+        {hasMore && (
+          <div className="mt-12 text-center">
+            <Button variant="secondary" size="lg" disabled={loading} onClick={() => setPage((p) => p + 1)}>
+              {loading ? "Loading…" : "Load more products"}
+            </Button>
+          </div>
+        )}
+      </Container>
 
       <Container className="pb-20">
         <motion.div initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }} variants={reveal}>
