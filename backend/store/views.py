@@ -1,3 +1,4 @@
+```python
 import uuid
 
 from django.db.models import Avg, Q
@@ -8,13 +9,14 @@ from rest_framework.views import APIView
 
 from .models import (
     Category, Product, ProductOptionValue, Review, WishlistItem,
-    Cart, CartItem, Order, OrderItem,
+    Cart, CartItem, Order, OrderItem, ContactMessage,
 )
 from .notifications import send_order_emails, send_whatsapp_alert
 from .serializers import (
     CategorySerializer, ProductListSerializer, ProductDetailSerializer,
     ReviewSerializer, WishlistItemSerializer, CartSerializer, CartItemSerializer,
     OrderSerializer, CheckoutSerializer, RegisterSerializer, UserSerializer,
+    ContactMessageSerializer,
 )
 
 
@@ -293,3 +295,11 @@ class MeView(APIView):
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+
+class ContactView(generics.CreateAPIView):
+    """Public 'Contact us' form endpoint — saves the message so it shows in the admin."""
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+    serializer_class = ContactMessageSerializer
+```
