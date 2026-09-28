@@ -1,4 +1,4 @@
-```python
+
 import uuid
 
 from django.db.models import Avg, Q
@@ -302,4 +302,3 @@ class ContactView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
     serializer_class = ContactMessageSerializer
-```
