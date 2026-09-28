@@ -16,6 +16,8 @@ import Register from "./pages/Register";
 import Orders from "./pages/Orders";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import TrackOrder from "./pages/TrackOrder";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
@@ -38,6 +40,8 @@ export default function App() {
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/order-confirmation/:id" element={<OrderConfirmation />} />
                   <Route path="/track-order" element={<TrackOrder />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
                   <Route path="*" element={<NotFound />} />
                 </Route>
               </Routes>
