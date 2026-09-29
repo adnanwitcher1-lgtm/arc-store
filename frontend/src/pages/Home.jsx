@@ -40,8 +40,19 @@ export default function Home() {
   return (
     <PageFade>
       <section className="relative overflow-hidden">
+        <div className="absolute inset-0 hidden sm:block">
+          <img
+            src="/hero-banner.png"
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full object-cover object-right"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-paper via-paper/85 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-paper via-transparent to-transparent" />
+        </div>
+
         <div
-          className="pointer-events-none absolute -right-40 -top-40 h-[560px] w-[560px] rounded-full opacity-30 blur-3xl sm:opacity-40"
+          className="pointer-events-none absolute -right-40 -top-40 h-[560px] w-[560px] rounded-full opacity-20 blur-3xl sm:opacity-25"
           style={{ background: "radial-gradient(circle, var(--color-pine), transparent 70%)" }}
         />
         <motion.div
@@ -54,7 +65,7 @@ export default function Home() {
           </svg>
         </motion.div>
 
-        <Container className="relative flex flex-col items-center gap-10 py-10 sm:py-16 lg:flex-row lg:justify-between">
+        <Container className="relative py-10 sm:py-24">
           <div className="max-w-xl">
             <motion.h1
               initial={{ opacity: 0, y: 14 }}
@@ -87,15 +98,6 @@ export default function Home() {
               </Button>
             </motion.div>
           </div>
-
-          <motion.img
-            src="/hero-banner.png"
-            alt="Featured watch, perfume, grooming and fashion products"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="w-full max-w-lg rounded-2xl object-cover lg:max-w-xl"
-          />
         </Container>
       </section>
 
