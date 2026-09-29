@@ -3,6 +3,11 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils.text import slugify
 
+SIZE_TOKENS = {
+    "xxs", "xs", "s", "m", "l", "xl", "xxl", "xxxl", "2xl", "3xl", "4xl",
+    "small", "medium", "large", "free size", "one size",
+}
+
 
 class TimeStampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -101,7 +106,7 @@ class ProductImage(models.Model):
 
 
 class ProductOption(models.Model):
-    """A choice group on a product, e.g. 'Color' or 'Strap Color'."""
+    """A choice group on a product, e.g. 'Color' or 'Size'."""
 
     product = models.ForeignKey(Product, related_name="options", on_delete=models.CASCADE)
     name = models.CharField(max_length=60)
@@ -112,6 +117,24 @@ class ProductOption(models.Model):
 
     def __str__(self):
         return f"{self.product.name} — {self.name}"
+
+    @property
+    def kind(self):
+        """'color' | 'size' | 'other' — tells the storefront how to render this option."""
+        name = self.name.lower()
+        if "colo" in name:  # matches Color / Colour / Strap Color
+            return "color"
+        if "size" in name:
+            return "size"
+        values = list(self.values.all())
+        if values and all(v.hex_color for v in values):
+            return "color"
+        if values and all(
+            v.label.strip().lower() in SIZE_TOKENS or v.label.strip().replace(".", "", 1).isdigit()
+            for v in values
+        ):
+            return "size"
+        return "other"
 
 
 class ProductOptionValue(models.Model):
