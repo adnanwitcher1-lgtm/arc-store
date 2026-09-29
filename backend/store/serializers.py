@@ -32,10 +32,11 @@ class ProductOptionValueSerializer(serializers.ModelSerializer):
 
 class ProductOptionSerializer(serializers.ModelSerializer):
     values = ProductOptionValueSerializer(many=True, read_only=True)
+    kind = serializers.ReadOnlyField()
 
     class Meta:
         model = ProductOption
-        fields = ["id", "name", "order", "values"]
+        fields = ["id", "name", "kind", "order", "values"]
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -62,24 +63,40 @@ class ProductListSerializer(serializers.ModelSerializer):
     review_count = serializers.ReadOnlyField()
     in_stock = serializers.ReadOnlyField()
     colors = serializers.SerializerMethodField()
+    sizes = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = [
             "id", "name", "slug", "short_description", "price", "compare_at_price",
             "discount_percent", "category_name", "category_slug", "primary_image",
-            "average_rating", "review_count", "is_featured", "in_stock", "colors",
+            "average_rating", "review_count", "is_featured", "in_stock", "colors", "sizes",
         ]
 
+    def _first_option(self, obj, kind):
+        for option in obj.options.all():  # prefetched — no extra queries
+            if option.kind == kind:
+                return option
+        return None
+
     def get_colors(self, obj):
-        """Colour choices shown as small dots on the product card.
-        Uses the prefetched options, so this adds no extra queries."""
-        colors = []
-        for option in obj.options.all():
-            if "colo" in option.name.lower():  # matches Color / Colour / Strap Color
-                for value in option.values.all():
-                    colors.append({"id": value.id, "label": value.label, "hex_color": value.hex_color})
-        return colors
+        """Colour choices shown as small dots on the product card."""
+        option = self._first_option(obj, "color")
+        if not option:
+            return []
+        request = self.context.get("request")
+        out = []
+        for value in option.values.all():
+            image = None
+            if value.swatch_image:
+                image = request.build_absolute_uri(value.swatch_image.url) if request else value.swatch_image.url
+            out.append({"id": value.id, "label": value.label, "hex_color": value.hex_color, "swatch_image": image})
+        return out
+
+    def get_sizes(self, obj):
+        """Size labels shown as small text on the product card."""
+        option = self._first_option(obj, "size")
+        return [v.label for v in option.values.all()] if option else []
 
     def get_primary_image(self, obj):
         first = obj.images.first()
@@ -121,14 +138,39 @@ class ProductLiteSerializer(serializers.ModelSerializer):
     average_rating = serializers.ReadOnlyField()
     review_count = serializers.ReadOnlyField()
     in_stock = serializers.ReadOnlyField()
+    colors = serializers.SerializerMethodField()
+    sizes = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = [
             "id", "name", "slug", "price", "compare_at_price", "primary_image", "stock",
             "category_name", "category_slug", "discount_percent", "average_rating",
-            "review_count", "in_stock", "is_featured",
+            "review_count", "in_stock", "is_featured", "colors", "sizes",
         ]
+
+    def _first_option(self, obj, kind):
+        for option in obj.options.all():
+            if option.kind == kind:
+                return option
+        return None
+
+    def get_colors(self, obj):
+        option = self._first_option(obj, "color")
+        if not option:
+            return []
+        request = self.context.get("request")
+        out = []
+        for value in option.values.all():
+            image = None
+            if value.swatch_image:
+                image = request.build_absolute_uri(value.swatch_image.url) if request else value.swatch_image.url
+            out.append({"id": value.id, "label": value.label, "hex_color": value.hex_color, "swatch_image": image})
+        return out
+
+    def get_sizes(self, obj):
+        option = self._first_option(obj, "size")
+        return [v.label for v in option.values.all()] if option else []
 
     def get_primary_image(self, obj):
         first = obj.images.first()
