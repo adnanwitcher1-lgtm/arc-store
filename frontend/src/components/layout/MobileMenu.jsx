@@ -50,6 +50,13 @@ export default function MobileMenu({ open, onClose, categories }) {
               <Link to="/shop?featured=true" onClick={onClose} className="rounded-lg px-2 py-2.5 font-medium text-brick">
                 Deals
               </Link>
+              <div className="my-1 border-t border-ink/10" />
+              <Link to="/about" onClick={onClose} className="rounded-lg px-2 py-2.5 text-ink-soft hover:bg-paper-dim">
+                About us
+              </Link>
+              <Link to="/contact" onClick={onClose} className="rounded-lg px-2 py-2.5 text-ink-soft hover:bg-paper-dim">
+                Contact us
+              </Link>
             </nav>
 
             <div className="mt-auto flex flex-col gap-1 border-t border-ink/10 pt-4 text-sm">
