@@ -40,12 +40,12 @@ export default function Home() {
   return (
     <PageFade>
       <section className="relative min-h-[520px] overflow-hidden sm:min-h-[600px]">
-        <div className="absolute inset-0 hidden sm:block">
+        <div className="absolute inset-0 block">
           <img
             src="/hero-banner.png"
             alt=""
             aria-hidden="true"
-            className="h-full w-full scale-110 object-cover object-right opacity-90"
+            className="h-full w-full scale-100 object-cover object-right opacity-90 sm:scale-110"
           />
           {/* left-to-right fade so the image dissolves into the page background */}
           <div className="absolute inset-0 bg-gradient-to-r from-paper from-10% via-paper/70 via-40% to-transparent to-80%" />
