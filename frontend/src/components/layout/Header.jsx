@@ -135,22 +135,23 @@ export default function Header() {
       <nav className="hidden border-t border-ink/10 md:block">
         <Container className="flex h-12 items-center gap-6 text-sm">
           <CategoriesMenu categories={categories} />
-          {categories.map((cat) => (
-            <Link key={cat.id} to={`/shop?category=${cat.slug}`} className="text-ink-soft hover:text-pine">
-              {cat.name}
-            </Link>
-          ))}
-          <Link to="/about" className="text-ink-soft hover:text-pine">
-            About us
+          <Link to="/" className="text-ink-soft hover:text-pine">
+            Home
           </Link>
-          <Link to="/contact" className="text-ink-soft hover:text-pine">
-            Contact us
-          </Link>
-          <Link to="/track-order" className="ml-auto font-medium text-ink-soft hover:text-pine">
-            Track order
+          <Link to="/shop" className="text-ink-soft hover:text-pine">
+            Shop
           </Link>
           <Link to="/shop?featured=true" className="font-medium text-brick hover:text-brick/80">
             Deals
+          </Link>
+          <Link to="/track-order" className="text-ink-soft hover:text-pine">
+            Track order
+          </Link>
+          <Link to="/about" className="text-ink-soft hover:text-pine">
+            About us
+          </Link>
+          <Link to="/contact" className="ml-auto text-ink-soft hover:text-pine">
+            Contact us
           </Link>
         </Container>
       </nav>
