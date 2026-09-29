@@ -4,6 +4,7 @@ import { Search, User, Heart, ShoppingBag, Menu, LogOut } from "lucide-react";
 import Container from "../common/Container";
 import Logo from "../common/Logo";
 import MobileMenu from "./MobileMenu";
+import CategoriesMenu from "./CategoriesMenu";
 import { useCategories } from "../../lib/useCategories";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
@@ -132,15 +133,19 @@ export default function Header() {
       </Container>
 
       <nav className="hidden border-t border-ink/10 md:block">
-        <Container className="flex h-12 items-center gap-7 text-sm">
-          <Link to="/shop" className="font-medium text-ink hover:text-pine">
-            All products
-          </Link>
+        <Container className="flex h-12 items-center gap-6 text-sm">
+          <CategoriesMenu categories={categories} />
           {categories.map((cat) => (
             <Link key={cat.id} to={`/shop?category=${cat.slug}`} className="text-ink-soft hover:text-pine">
               {cat.name}
             </Link>
           ))}
+          <Link to="/about" className="text-ink-soft hover:text-pine">
+            About us
+          </Link>
+          <Link to="/contact" className="text-ink-soft hover:text-pine">
+            Contact us
+          </Link>
           <Link to="/track-order" className="ml-auto font-medium text-ink-soft hover:text-pine">
             Track order
           </Link>
