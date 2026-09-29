@@ -39,16 +39,20 @@ export default function Home() {
 
   return (
     <PageFade>
-      <section className="relative overflow-hidden">
+      <section className="relative min-h-[520px] overflow-hidden sm:min-h-[600px]">
         <div className="absolute inset-0 hidden sm:block">
           <img
             src="/hero-banner.png"
             alt=""
             aria-hidden="true"
-            className="h-full w-full object-cover object-right"
+            className="h-full w-full scale-110 object-cover object-right opacity-90"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-paper via-paper/85 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-paper via-transparent to-transparent" />
+          {/* left-to-right fade so the image dissolves into the page background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-paper from-10% via-paper/70 via-40% to-transparent to-80%" />
+          {/* top fade */}
+          <div className="absolute inset-0 bg-gradient-to-b from-paper from-0% via-transparent via-30% to-transparent" />
+          {/* bottom fade */}
+          <div className="absolute inset-0 bg-gradient-to-t from-paper from-0% via-transparent via-30% to-transparent" />
         </div>
 
         <div
@@ -65,7 +69,7 @@ export default function Home() {
           </svg>
         </motion.div>
 
-        <Container className="relative py-10 sm:py-24">
+        <Container className="relative flex min-h-[520px] items-center py-10 sm:min-h-[600px] sm:py-24">
           <div className="max-w-xl">
             <motion.h1
               initial={{ opacity: 0, y: 14 }}
