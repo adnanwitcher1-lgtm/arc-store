@@ -54,7 +54,7 @@ export default function Home() {
           </svg>
         </motion.div>
 
-        <Container className="relative py-10 sm:py-16">
+        <Container className="relative flex flex-col items-center gap-10 py-10 sm:py-16 lg:flex-row lg:justify-between">
           <div className="max-w-xl">
             <motion.h1
               initial={{ opacity: 0, y: 14 }}
@@ -87,6 +87,15 @@ export default function Home() {
               </Button>
             </motion.div>
           </div>
+
+          <motion.img
+            src="/hero-banner.png"
+            alt="Featured watch, perfume, grooming and fashion products"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="w-full max-w-lg rounded-2xl object-cover lg:max-w-xl"
+          />
         </Container>
       </section>
 
