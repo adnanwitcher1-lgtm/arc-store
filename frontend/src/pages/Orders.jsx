@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import Container from "../components/common/Container";
 import Button from "../components/common/Button";
 import PageFade from "../components/common/PageTransition";
+import Seo from "../components/common/Seo";
 import { useAuth } from "../context/AuthContext";
 import { fetchOrders } from "../api/orders";
 import { formatPrice } from "../lib/format";
@@ -40,6 +41,7 @@ export default function Orders() {
 
   return (
     <PageFade>
+      <Seo title="My orders" noindex />
       <Container className="py-10">
         <h1 className="text-3xl font-semibold text-ink">Your orders</h1>
 

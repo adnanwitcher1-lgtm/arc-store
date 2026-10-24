@@ -4,6 +4,7 @@ import Container from "../components/common/Container";
 import Button from "../components/common/Button";
 import Field from "../components/common/Field";
 import PageFade from "../components/common/PageTransition";
+import Seo from "../components/common/Seo";
 import { trackOrder } from "../api/orders";
 import { formatPrice } from "../lib/format";
 
@@ -39,6 +40,7 @@ export default function TrackOrder() {
 
   return (
     <PageFade>
+      <Seo title="Track your order" description="Track your JH Store order with your order number and email." />
       <Container className="flex justify-center py-16">
         <div className="w-full max-w-lg">
           <div className="text-center">

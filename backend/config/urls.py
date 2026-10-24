@@ -4,7 +4,10 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from store.seo import sitemap_xml
+
 urlpatterns = [
+    path("sitemap.xml", sitemap_xml, name="sitemap"),
     path("admin/", admin.site.urls),
     path("api/", include("store.urls")),
     path("api/auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),

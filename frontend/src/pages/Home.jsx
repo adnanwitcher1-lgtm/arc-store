@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Container from "../components/common/Container";
 import Button from "../components/common/Button";
 import PageFade from "../components/common/PageTransition";
+import Seo from "../components/common/Seo";
 import ProductGrid from "../components/product/ProductGrid";
 import TrustBadges from "../components/product/TrustBadges";
 import { useCategories } from "../lib/useCategories";
@@ -39,6 +40,7 @@ export default function Home() {
 
   return (
     <PageFade>
+      <Seo description="Shop watches, footwear, skincare, grooming and fashion at JH Store. Cash on delivery and fast shipping across Pakistan." keywords="online shopping pakistan, watches, shoes, skincare, grooming, fashion, faisalabad" />
       <section className="relative min-h-[520px] overflow-hidden sm:min-h-[600px]">
         <div className="absolute inset-0 block">
           <img

@@ -1,10 +1,13 @@
+from django import forms
 from django.contrib import admin
+from django.db import transaction
 from django.utils.html import format_html
 
 from .models import (
     Category, Product, ProductImage, ProductOption, ProductOptionValue,
     Review, WishlistItem, Cart, CartItem, Order, OrderItem, ContactMessage,
 )
+from .sizes import parse_sizes
 
 
 class ProductImageInline(admin.TabularInline):
@@ -52,6 +55,10 @@ class CategoryAdmin(admin.ModelAdmin):
     list_editable = ("is_active", "order")
     search_fields = ("name",)
     prepopulated_fields = {"slug": ("name",)}
+    fieldsets = (
+        (None, {"fields": ("name", "slug", "description", "image", "is_active", "order")}),
+        ("SEO (Google)", {"classes": ("collapse",), "fields": ("meta_title", "meta_description")}),
+    )
 
     class Media:
         css = {"all": ("store/admin_mobile.css",)}
@@ -84,8 +91,70 @@ def _add_option(product, name, values):
     return True
 
 
+def _size_option(product):
+    return product.options.filter(name__iexact="size").first()
+
+
+class ProductAdminForm(forms.ModelForm):
+    sizes_input = forms.CharField(
+        label="Sizes",
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "e.g.  38-46   or   S, M, L, XL   or   0-50   or   6-12:0.5"}),
+        help_text=(
+            "Type any sizes you want, separated by commas. Use a range for many at once: "
+            "<b>0-50</b> (0,1,2…50), <b>38-46</b>, or with a step <b>6-12:0.5</b> (6, 6.5, 7…12). "
+            "Mix freely: <b>38-42, 43.5, Free Size</b>. Leave empty for products without sizes (e.g. watches). "
+            "The order you type is the order customers see."
+        ),
+    )
+
+    class Meta:
+        model = Product
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            option = _size_option(self.instance)
+            if option:
+                self.initial["sizes_input"] = ", ".join(v.label for v in option.values.all())
+
+    def clean_sizes_input(self):
+        raw = self.cleaned_data.get("sizes_input", "")
+        try:
+            parse_sizes(raw)
+        except ValueError as exc:
+            raise forms.ValidationError(str(exc))
+        return raw
+
+
+def _sync_sizes(product, labels):
+    """Make the product's 'Size' option match `labels` exactly (create / reorder / remove)."""
+    option = _size_option(product)
+    if not labels:
+        if option:
+            option.delete()
+        return
+    if not option:
+        option = ProductOption.objects.create(product=product, name="Size", order=product.options.count())
+    existing = {v.label.strip().lower(): v for v in option.values.all()}
+    keep = set()
+    for index, label in enumerate(labels):
+        key = label.lower()
+        value = existing.get(key)
+        if value:
+            if value.order != index:
+                value.order = index
+                value.save(update_fields=["order"])
+        else:
+            value = ProductOptionValue.objects.create(option=option, label=label, order=index)
+        keep.add(value.pk)
+    option.values.exclude(pk__in=keep).delete()
+
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
+    form = ProductAdminForm
     list_display = (
         "thumbnail", "name", "category", "price", "compare_at_price",
         "discount_badge", "stock", "is_featured", "is_active", "rating_display",
@@ -105,7 +174,19 @@ class ProductAdmin(admin.ModelAdmin):
         ("Basics", {"fields": ("category", "name", "slug", "sku", "is_active", "is_featured")}),
         ("Description", {"fields": ("short_description", "description", "specifications")}),
         ("Pricing & stock", {"fields": ("price", "compare_at_price", "stock")}),
+        ("Sizes", {"fields": ("sizes_input",)}),
+        ("SEO (Google) — optional", {
+            "classes": ("collapse",),
+            "description": "Leave blank and the product name / short description are used automatically.",
+            "fields": ("meta_title", "meta_description", "meta_keywords"),
+        }),
     )
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        if "sizes_input" in form.changed_data:
+            with transaction.atomic():
+                _sync_sizes(form.instance, parse_sizes(form.cleaned_data.get("sizes_input", "")))
 
     @admin.action(description="Add sizes: S, M, L, XL, XXL")
     def add_clothing_sizes(self, request, queryset):

@@ -4,6 +4,7 @@ import Container from "../components/common/Container";
 import Button from "../components/common/Button";
 import Field from "../components/common/Field";
 import PageFade from "../components/common/PageTransition";
+import Seo from "../components/common/Seo";
 import { sendContactMessage } from "../api/contact";
 import { SITE } from "../lib/site";
 
@@ -50,6 +51,7 @@ export default function Contact() {
 
   return (
     <PageFade>
+      <Seo title="Contact us" description="Get in touch with JH Store by WhatsApp, email or the contact form. We reply fast." />
       <section className="border-b border-ink/10 bg-paper-dim/50">
         <Container className="py-12 sm:py-16">
           <p className="text-sm font-medium uppercase tracking-widest text-pine">Contact us</p>

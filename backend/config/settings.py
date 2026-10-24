@@ -201,6 +201,9 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
 }
 
+# Public URL of the React storefront (used in sitemap.xml). Set to https://yourdomain.com in production.
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+
 # CORS — the React dev server runs on a different port, so allow it explicitly.
 CORS_ALLOWED_ORIGINS = os.environ.get(
     "CORS_ALLOWED_ORIGINS",

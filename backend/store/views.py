@@ -103,6 +103,16 @@ class CartItemListCreateView(APIView):
         option_values = serializer.validated_data.get("selected_options", [])
         quantity = serializer.validated_data.get("quantity", 1)
 
+        # Every option group that has choices (Size, Color...) needs exactly one valid pick.
+        chosen = {ov.option_id: ov for ov in option_values if ov.option.product_id == product.id}
+        missing = [o.name for o in product.options.prefetch_related("values") if o.values.exists() and o.id not in chosen]
+        if missing:
+            return Response(
+                {"detail": f"Please select {' and '.join(m.lower() for m in missing)}."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        option_values = list(chosen.values())
+
         existing = None
         for item in cart.items.filter(product=product):
             if set(item.selected_options.values_list("id", flat=True)) == {ov.id for ov in option_values}:

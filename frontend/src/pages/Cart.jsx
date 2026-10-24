@@ -3,6 +3,7 @@ import { Trash2 } from "lucide-react";
 import Container from "../components/common/Container";
 import Button from "../components/common/Button";
 import PageFade from "../components/common/PageTransition";
+import Seo from "../components/common/Seo";
 import QuantitySelector from "../components/product/QuantitySelector";
 import { useCart } from "../context/CartContext";
 import { formatPrice } from "../lib/format";
@@ -17,6 +18,7 @@ export default function Cart() {
   if (cart.items.length === 0) {
     return (
       <PageFade>
+        <Seo title="Your cart" noindex />
         <Container className="py-24 text-center">
           <h1 className="text-2xl font-semibold text-ink">Your cart is empty</h1>
           <p className="mt-2 text-stone">Add something you'll love.</p>
@@ -30,6 +32,7 @@ export default function Cart() {
 
   return (
     <PageFade>
+      <Seo title="Your cart" noindex />
       <Container className="py-10">
         <h1 className="text-3xl font-semibold text-ink">Your cart</h1>
 

@@ -5,6 +5,7 @@ import { Heart, Share2 } from "lucide-react";
 import Container from "../components/common/Container";
 import Button from "../components/common/Button";
 import PageFade from "../components/common/PageTransition";
+import Seo from "../components/common/Seo";
 import ProductGallery from "../components/product/ProductGallery";
 import RatingStars from "../components/product/RatingStars";
 import OptionSwatches from "../components/product/OptionSwatches";
@@ -14,6 +15,7 @@ import ProductTabs from "../components/product/ProductTabs";
 import ProductGrid from "../components/product/ProductGrid";
 import { fetchProduct, fetchProducts } from "../api/products";
 import { formatPrice } from "../lib/format";
+import { SITE } from "../lib/site";
 import { isColorOption } from "../lib/colors";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
@@ -78,6 +80,48 @@ export default function ProductDetail() {
 
   const wishlisted = wishlistIds.has(product.id);
 
+  const origin = SITE.url || window.location.origin;
+  const productUrl = `${origin}/product/${product.slug}`;
+  const images = product.images.map((i) => i.image);
+  const sizeOption = product.options.find((o) => o.kind === "size");
+  const seoDescription =
+    product.meta_description || product.short_description || product.description || `Buy ${product.name} at ${SITE.name}.`;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Product",
+        name: product.name,
+        description: seoDescription,
+        sku: product.sku,
+        image: images,
+        category: product.category_name,
+        brand: { "@type": "Brand", name: SITE.name },
+        ...(sizeOption ? { size: sizeOption.values.map((v) => v.label).join(", ") } : {}),
+        ...(product.review_count > 0
+          ? { aggregateRating: { "@type": "AggregateRating", ratingValue: product.average_rating, reviewCount: product.review_count } }
+          : {}),
+        offers: {
+          "@type": "Offer",
+          url: productUrl,
+          priceCurrency: "PKR",
+          price: product.price,
+          availability: product.in_stock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+          itemCondition: "https://schema.org/NewCondition",
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: origin },
+          { "@type": "ListItem", position: 2, name: "Shop", item: `${origin}/shop` },
+          { "@type": "ListItem", position: 3, name: product.category_name, item: `${origin}/shop?category=${product.category_slug}` },
+          { "@type": "ListItem", position: 4, name: product.name, item: productUrl },
+        ],
+      },
+    ],
+  };
+
   async function handleAddToCart(goToCart) {
     const missing = product.options.filter((o) => o.values.length > 0 && !selected[o.id]);
     if (missing.length > 0) {
@@ -118,6 +162,14 @@ export default function ProductDetail() {
 
   return (
     <PageFade>
+      <Seo
+        title={product.meta_title || product.name}
+        description={seoDescription}
+        keywords={product.meta_keywords || `${product.name}, ${product.category_name}`}
+        image={images[0]}
+        type="product"
+        jsonLd={jsonLd}
+      />
       <Container className="py-8">
         <nav className="flex flex-wrap items-center gap-1.5 text-sm text-stone">
           <Link to="/" className="hover:text-ink">Home</Link>

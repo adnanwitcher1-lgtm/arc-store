@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /cart
+Disallow: /checkout
+Disallow: /login
+Disallow: /register
+Disallow: /orders
+Disallow: /order-confirmation/
+Disallow: /wishlist
+
+# After your domain is live, replace with your real domain:
+Sitemap: https://www.jamshan.com/sitemap.xml

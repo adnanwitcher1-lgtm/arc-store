@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import Container from "../components/common/Container";
 import Button from "../components/common/Button";
 import PageFade from "../components/common/PageTransition";
+import Seo from "../components/common/Seo";
 import ProductGrid from "../components/product/ProductGrid";
 import { useWishlist } from "../context/WishlistContext";
 import { useAuth } from "../context/AuthContext";
@@ -24,6 +25,7 @@ export default function Wishlist() {
 
   return (
     <PageFade>
+      <Seo title="Wishlist" noindex />
       <Container className="py-10">
         <h1 className="text-3xl font-semibold text-ink">Your wishlist</h1>
         <div className="mt-8">

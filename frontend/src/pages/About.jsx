@@ -4,6 +4,7 @@ import { Gem, Truck, ShieldCheck, Headset } from "lucide-react";
 import Container from "../components/common/Container";
 import Button from "../components/common/Button";
 import PageFade from "../components/common/PageTransition";
+import Seo from "../components/common/Seo";
 import { useCategories } from "../lib/useCategories";
 import { SITE } from "../lib/site";
 
@@ -24,6 +25,7 @@ export default function About() {
 
   return (
     <PageFade>
+      <Seo title="About us" description="Learn about JH Store — our story, our promise on quality and why customers across Pakistan shop with us." />
       <section className="border-b border-ink/10 bg-paper-dim/50">
         <Container className="py-14 sm:py-20">
           <p className="text-sm font-medium uppercase tracking-widest text-pine">About us</p>

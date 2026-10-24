@@ -4,6 +4,7 @@ import Container from "../components/common/Container";
 import Button from "../components/common/Button";
 import Field from "../components/common/Field";
 import PageFade from "../components/common/PageTransition";
+import Seo from "../components/common/Seo";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
@@ -66,6 +67,7 @@ export default function Checkout() {
 
   return (
     <PageFade>
+      <Seo title="Checkout" noindex />
       <Container className="py-10">
         <h1 className="text-3xl font-semibold text-ink">Checkout</h1>
 

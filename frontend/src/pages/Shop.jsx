@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Container from "../components/common/Container";
 import PageFade from "../components/common/PageTransition";
+import Seo from "../components/common/Seo";
 import ProductGrid from "../components/product/ProductGrid";
 import { useCategories } from "../lib/useCategories";
 import { fetchProducts } from "../api/products";
@@ -54,10 +55,20 @@ export default function Shop() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  const activeCategoryName = categories.find((c) => c.slug === category)?.name;
+  const activeCategory = categories.find((c) => c.slug === category);
+  const activeCategoryName = activeCategory?.name;
 
   return (
     <PageFade>
+      <Seo
+        title={activeCategory ? activeCategory.meta_title || activeCategory.name : search ? `Search: ${search}` : "Shop all products"}
+        description={
+          activeCategory
+            ? activeCategory.meta_description || activeCategory.description || `Shop ${activeCategory.name} at JH Store with cash on delivery across Pakistan.`
+            : "Browse every product at JH Store — watches, footwear, skincare, grooming and fashion."
+        }
+        noindex={Boolean(search) || page > 1}
+      />
       <Container className="py-10">
         <h1 className="text-3xl font-semibold text-ink">
           {featured ? "Today's picks" : activeCategoryName || (search ? `Results for “${search}”` : "All products")}

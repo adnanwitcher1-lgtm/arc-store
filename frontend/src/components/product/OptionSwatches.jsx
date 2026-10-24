@@ -48,8 +48,10 @@ function ColorOption({ option, selectedId, onSelect }) {
 }
 
 function ChipOption({ option, selectedId, onSelect }) {
+  // Clients can add anywhere from 1 to hundreds of sizes — keep the layout tidy for long lists.
+  const many = option.values.length > 18;
   return (
-    <div className="mt-2.5 flex flex-wrap gap-2.5">
+    <div className={`mt-2.5 flex flex-wrap ${many ? "max-h-48 gap-2 overflow-y-auto pr-1" : "gap-2.5"}`}>
       {option.values.map((value) => {
         const active = value.id === selectedId;
         return (

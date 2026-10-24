@@ -24,6 +24,14 @@ class Category(TimeStampedModel):
     image = models.ImageField(upload_to="categories/", blank=True, null=True)
     is_active = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
+    meta_title = models.CharField(
+        "SEO title", max_length=70, blank=True,
+        help_text="Google result title (max ~60 chars). Blank = category name.",
+    )
+    meta_description = models.CharField(
+        "SEO description", max_length=170, blank=True,
+        help_text="Google result snippet (max ~160 chars). Blank = category description.",
+    )
 
     class Meta:
         verbose_name_plural = "Categories"
@@ -54,6 +62,18 @@ class Product(TimeStampedModel):
     stock = models.PositiveIntegerField(default=0)
     is_featured = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    meta_title = models.CharField(
+        "SEO title", max_length=70, blank=True,
+        help_text="Google result title (max ~60 chars). Blank = product name.",
+    )
+    meta_description = models.CharField(
+        "SEO description", max_length=170, blank=True,
+        help_text="Google result snippet (max ~160 chars). Blank = short description.",
+    )
+    meta_keywords = models.CharField(
+        "SEO tags / keywords", max_length=255, blank=True,
+        help_text="Comma separated, e.g. running shoes, men sneakers, lahore",
+    )
 
     class Meta:
         ordering = ["-created_at"]

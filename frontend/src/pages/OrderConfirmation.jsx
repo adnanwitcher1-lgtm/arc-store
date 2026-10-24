@@ -5,6 +5,7 @@ import { CheckCircle2, Mail } from "lucide-react";
 import Container from "../components/common/Container";
 import Button from "../components/common/Button";
 import PageFade from "../components/common/PageTransition";
+import Seo from "../components/common/Seo";
 import { fetchOrder } from "../api/orders";
 import { formatPrice } from "../lib/format";
 
@@ -34,6 +35,7 @@ export default function OrderConfirmation() {
 
   return (
     <PageFade>
+      <Seo title="Order confirmed" noindex />
       <Container className="flex justify-center py-16">
         <div className="w-full max-w-lg text-center">
           <motion.div
