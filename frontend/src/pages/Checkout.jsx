@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Container from "../components/common/Container";
 import Button from "../components/common/Button";
@@ -10,6 +10,7 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { checkout } from "../api/orders";
 import { formatPrice } from "../lib/format";
+import { initiateCheckout, addPaymentInfo } from "../lib/metaPixel";
 
 const initialForm = {
   full_name: "", email: "", phone: "", address_line: "", city: "", state: "",
@@ -23,6 +24,16 @@ export default function Checkout() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ ...initialForm, full_name: user?.first_name ? `${user.first_name} ${user.last_name}`.trim() : "", email: user?.email || "" });
   const [submitting, setSubmitting] = useState(false);
+  const checkoutTracked = useRef(false);
+
+  // Meta Pixel InitiateCheckout once the checkout form is actually shown.
+  const ready = Boolean(user) && cart.items.length > 0;
+  useEffect(() => {
+    if (ready && !checkoutTracked.current) {
+      checkoutTracked.current = true;
+      initiateCheckout(cart);
+    }
+  }, [ready, cart]);
 
   if (!user) {
     return (
@@ -53,6 +64,7 @@ export default function Checkout() {
   async function handleSubmit(e) {
     e.preventDefault();
     setSubmitting(true);
+    addPaymentInfo(cart, form.payment_method);
     try {
       const order = await checkout(form);
       await refresh();

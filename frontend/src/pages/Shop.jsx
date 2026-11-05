@@ -7,6 +7,7 @@ import Seo from "../components/common/Seo";
 import ProductGrid from "../components/product/ProductGrid";
 import { useCategories } from "../lib/useCategories";
 import { fetchProducts } from "../api/products";
+import { search as trackSearch, viewCategory } from "../lib/metaPixel";
 
 const SORTS = [
   { value: "", label: "Newest" },
@@ -39,6 +40,16 @@ export default function Shop() {
       .then(setData)
       .finally(() => setLoading(false));
   }, [category, search, featured, ordering, page]);
+
+  // Meta Pixel: Search when a query is used, ViewCategory when a category is opened.
+  useEffect(() => {
+    if (search) trackSearch(search);
+  }, [search]);
+
+  useEffect(() => {
+    if (category) viewCategory(categories.find((c) => c.slug === category)?.name || category, category);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category]);
 
   function updateParam(key, value) {
     const next = new URLSearchParams(searchParams);

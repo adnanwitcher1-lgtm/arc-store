@@ -94,3 +94,13 @@ or break the underlying system. Keep your own superuser account for maintenance.
 
 A short screen-share walking them through "add a product" and "check today's orders" goes a long way —
 the admin panel is only useful to them if they're comfortable in it.
+
+## 8. Meta (Facebook) Pixel
+The storefront tracks these Meta Pixel events: `PageView`, `ViewContent`, `AddToCart`, `AddToWishlist`,
+`Search`, `InitiateCheckout`, `AddPaymentInfo`, `Purchase`, `CompleteRegistration`, `Lead`, `Contact`
+plus custom `ViewCategory`, `ViewCart`, `RemoveFromCart`.
+
+1. In Meta Events Manager copy your **Pixel ID**.
+2. Set `VITE_META_PIXEL_ID=<pixel id>` in the frontend environment (Vercel → Settings → Environment Variables, or `frontend/.env` on the VPS).
+3. Redeploy / rebuild the frontend (Vite bakes env vars in at build time).
+4. Verify with the *Meta Pixel Helper* Chrome extension or Events Manager → Test Events.

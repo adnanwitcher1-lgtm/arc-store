@@ -7,6 +7,7 @@ import PageFade from "../components/common/PageTransition";
 import Seo from "../components/common/Seo";
 import { sendContactMessage } from "../api/contact";
 import { SITE } from "../lib/site";
+import { lead, contact } from "../lib/metaPixel";
 
 const EMPTY = { name: "", email: "", phone: "", subject: "", message: "" };
 
@@ -24,6 +25,7 @@ export default function Contact() {
     setError("");
     try {
       await sendContactMessage(form);
+      lead("contact_form");
       setSent(true);
       setForm(EMPTY);
     } catch (err) {
@@ -77,7 +79,7 @@ export default function Contact() {
               </div>
             );
             return href ? (
-              <a key={label} href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className="block">
+              <a key={label} href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className="block" onClick={() => contact(label)}>
                 {body}
               </a>
             ) : (

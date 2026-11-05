@@ -21,6 +21,7 @@ import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
+import { viewContent, addToCart as trackAddToCart, addToWishlist as trackAddToWishlist, initiateCheckout } from "../lib/metaPixel";
 
 export default function ProductDetail() {
   const { slug } = useParams();
@@ -42,6 +43,7 @@ export default function ProductDetail() {
     fetchProduct(slug)
       .then((data) => {
         setProduct(data);
+        viewContent(data);
         // Colours start on the first swatch; sizes (and other options) must be picked by the customer.
         setSelected(
           Object.fromEntries(
@@ -132,6 +134,8 @@ export default function ProductDetail() {
     setAdding(true);
     try {
       await addItem(product.id, quantity, Object.values(selected).filter(Boolean));
+      trackAddToCart(product, quantity);
+      if (goToCart) initiateCheckout({ items: [{ product, quantity }], subtotal: Number(product.price) * quantity });
       showToast(goToCart ? "Added — taking you to checkout" : `Added ${product.name} to cart`);
       if (goToCart) navigate("/cart");
     } catch {
@@ -147,7 +151,8 @@ export default function ProductDetail() {
       navigate("/login");
       return;
     }
-    await toggle(product.id);
+    const result = await toggle(product.id);
+    if (!wishlisted && !result?.requiresLogin) trackAddToWishlist(product);
   }
 
   async function handleShare() {

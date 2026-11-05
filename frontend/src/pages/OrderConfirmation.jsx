@@ -8,6 +8,7 @@ import PageFade from "../components/common/PageTransition";
 import Seo from "../components/common/Seo";
 import { fetchOrder } from "../api/orders";
 import { formatPrice } from "../lib/format";
+import { purchase } from "../lib/metaPixel";
 
 export default function OrderConfirmation() {
   const { id } = useParams();
@@ -15,7 +16,12 @@ export default function OrderConfirmation() {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    fetchOrder(id).then(setOrder).catch(() => setNotFound(true));
+    fetchOrder(id)
+      .then((o) => {
+        setOrder(o);
+        purchase(o); // Meta Pixel Purchase (fires once per order)
+      })
+      .catch(() => setNotFound(true));
   }, [id]);
 
   if (notFound) {

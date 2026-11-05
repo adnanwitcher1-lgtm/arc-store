@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { contact } from "../../lib/metaPixel";
 
 const PHONE = "923714905398"; // 03431740756 in international format
 const MESSAGE = "Hi! I have a question about a product.";
@@ -8,6 +9,7 @@ export default function WhatsAppButton() {
     <motion.a
       href={`https://wa.me/${PHONE}?text=${encodeURIComponent(MESSAGE)}`}
       target="_blank"
+      onClick={() => contact("whatsapp_button")}
       rel="noopener noreferrer"
       aria-label="Chat with us on WhatsApp"
       className="fixed bottom-5 left-5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg"

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import Container from "../components/common/Container";
@@ -7,9 +8,18 @@ import Seo from "../components/common/Seo";
 import QuantitySelector from "../components/product/QuantitySelector";
 import { useCart } from "../context/CartContext";
 import { formatPrice } from "../lib/format";
+import { viewCart, removeFromCart } from "../lib/metaPixel";
 
 export default function Cart() {
   const { cart, loading, updateItem, removeItem } = useCart();
+  const viewed = useRef(false);
+
+  useEffect(() => {
+    if (!loading && cart.items.length > 0 && !viewed.current) {
+      viewed.current = true;
+      viewCart(cart);
+    }
+  }, [loading, cart]);
 
   if (loading) {
     return <Container className="py-24 text-center text-stone">Loading your cart…</Container>;
@@ -58,7 +68,10 @@ export default function Cart() {
                       )}
                     </div>
                     <button
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => {
+                        removeFromCart(item.product, item.quantity);
+                        removeItem(item.id);
+                      }}
                       aria-label="Remove item"
                       className="p-1 text-stone hover:text-brick"
                     >
