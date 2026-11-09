@@ -8,7 +8,7 @@ import Seo from "../components/common/Seo";
 import QuantitySelector from "../components/product/QuantitySelector";
 import { useCart } from "../context/CartContext";
 import { formatPrice } from "../lib/format";
-import { viewCart, removeFromCart } from "../lib/metaPixel";
+import { viewCart, removeFromCart, addToCart as trackAddToCart } from "../lib/metaPixel";
 
 export default function Cart() {
   const { cart, loading, updateItem, removeItem } = useCart();
@@ -79,7 +79,12 @@ export default function Cart() {
                     </button>
                   </div>
                   <div className="flex items-center justify-between">
-                    <QuantitySelector value={item.quantity} onChange={(q) => updateItem(item.id, q)} />
+                    <QuantitySelector value={item.quantity} onChange={(q) => {
+                        const diff = q - item.quantity;
+                        if (diff > 0) trackAddToCart(item.product, diff);
+                        else if (diff < 0) removeFromCart(item.product, -diff);
+                        updateItem(item.id, q);
+                      }} />
                     <span className="font-medium text-ink">{formatPrice(item.line_total)}</span>
                   </div>
                 </div>

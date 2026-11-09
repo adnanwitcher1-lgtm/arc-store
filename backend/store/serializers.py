@@ -256,6 +256,10 @@ class CheckoutSerializer(serializers.Serializer):
         choices=["cash_on_delivery", "card"], default="cash_on_delivery",
     )
     notes = serializers.CharField(required=False, allow_blank=True)
+    # Meta tracking ids sent by the storefront (used only for the server-side Purchase event).
+    fbp = serializers.CharField(required=False, allow_blank=True, max_length=200)
+    fbc = serializers.CharField(required=False, allow_blank=True, max_length=400)
+    event_source_url = serializers.CharField(required=False, allow_blank=True, max_length=500)
 
 
 class RegisterSerializer(serializers.ModelSerializer):

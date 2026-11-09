@@ -15,7 +15,7 @@ import socket
 from datetime import timedelta
 from pathlib import Path
 
-# Render's containers have no IPv6 route, but Python's socket resolver tries IPv6
+# Some hosts have no IPv6 route, but Python's socket resolver tries IPv6
 # addresses first for hosts like smtp.gmail.com — causing an immediate "Network is
 # unreachable" error instead of falling back to IPv4. Forcing IPv4-only resolution
 # fixes outbound SMTP (and is harmless for everything else).
@@ -33,7 +33,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load backend/.env (if present) into the environment — so the values below "just work"
 # locally without having to set real OS environment variables by hand. Never overwrites a
-# variable that's already set (e.g. by a host like Render), so production is unaffected.
+# variable that's already set by the server (e.g. systemd), so production is unaffected.
 from dotenv import load_dotenv  # noqa: E402
 load_dotenv(BASE_DIR / ".env")
 
@@ -107,7 +107,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-# Reads DATABASE_URL when a host sets it (e.g. Render's managed Postgres);
+# Reads DATABASE_URL in production (PostgreSQL on the Contabo server);
 # falls back to local SQLite for development.
 
 import dj_database_url  # noqa: E402
@@ -169,7 +169,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Cloudinary — persistent media storage (product images survive restarts/redeploys,
-# unlike Render's free-tier local disk). Set these 3 as environment variables on Render.
+# unlike local disk on a server that gets rebuilt). Set these 3 in backend/.env on the server.
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
     'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
@@ -214,19 +214,18 @@ CORS_ALLOW_CREDENTIALS = True
 from corsheaders.defaults import default_headers  # noqa: E402
 CORS_ALLOW_HEADERS = list(default_headers) + ["x-guest-token"]
 
-# Production hardening — only kicks in once DEBUG=False (i.e. once real env vars are set on a host).
+# Production hardening — only kicks in once DEBUG=False (i.e. once backend/.env is set on the server).
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 60 * 60 * 24 * 7
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    # Render (and most PaaS hosts) terminate TLS at a proxy and forward plain HTTP internally.
+    # Nginx terminates TLS and forwards plain HTTP to Gunicorn, setting X-Forwarded-Proto.
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Email — order confirmations (to the customer) and new-order alerts (to the store owner).
-# Render blocks outbound raw SMTP connections (port 587 times out), so email is sent via
-# Resend's HTTP API instead — a normal HTTPS request, which is never blocked.
+# Email is sent via Resend's HTTP API (a normal HTTPS request — many hosts block raw SMTP).
 # Set RESEND_API_KEY to send real email; otherwise emails print to the console (dev default).
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 if RESEND_API_KEY:
@@ -243,3 +242,8 @@ ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "mumtazahmadfaheem@gmail.com")
 # Leave blank to skip; nothing breaks if these aren't set.
 CALLMEBOT_PHONE = os.environ.get("CALLMEBOT_PHONE", "923431740756")
 CALLMEBOT_APIKEY = os.environ.get("CALLMEBOT_APIKEY", "")
+
+# Optional: Meta Conversions API (server-side Purchase event). Leave blank to skip.
+META_PIXEL_ID = os.environ.get("META_PIXEL_ID", "")
+META_CAPI_ACCESS_TOKEN = os.environ.get("META_CAPI_ACCESS_TOKEN", "")
+META_TEST_EVENT_CODE = os.environ.get("META_TEST_EVENT_CODE", "")  # only while testing in Events Manager

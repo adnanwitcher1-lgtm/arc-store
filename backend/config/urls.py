@@ -4,10 +4,12 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from store.seo import sitemap_xml
+from store.seo import products_feed, share_product, sitemap_xml
 
 urlpatterns = [
     path("sitemap.xml", sitemap_xml, name="sitemap"),
+    path("feeds/products.xml", products_feed, name="products-feed"),
+    path("share/product/<slug:slug>", share_product, name="share-product"),
     path("admin/", admin.site.urls),
     path("api/", include("store.urls")),
     path("api/auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),

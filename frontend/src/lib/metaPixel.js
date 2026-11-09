@@ -1,8 +1,10 @@
 // Meta (Facebook) Pixel — single place for every tracking call.
-// Set VITE_META_PIXEL_ID in the frontend env (Vercel / .env). If it is empty, every function is a safe no-op.
+// Set VITE_META_PIXEL_ID in the frontend env (frontend/.env.production on the server, or .env locally). If it is empty, every function is a safe no-op.
 
 const PIXEL_ID = (import.meta.env.VITE_META_PIXEL_ID || "").trim();
 const CURRENCY = "PKR";
+
+import { mirrorToGA } from "./ga4";
 
 let initialised = false;
 
@@ -33,7 +35,45 @@ export function initPixel() {
   window.fbq("init", PIXEL_ID);
 }
 
+// ---- Browser ids (sent to the backend so server-side events match this visitor) ----
+function readCookie(name) {
+  try {
+    const m = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+    return m ? decodeURIComponent(m[1]) : "";
+  } catch {
+    return "";
+  }
+}
+
+export function getBrowserIds() {
+  if (typeof document === "undefined") return {};
+  return {
+    fbp: readCookie("_fbp"),
+    fbc: readCookie("_fbc"),
+    event_source_url: window.location.href,
+  };
+}
+
+// Advanced Matching: re-init the pixel with customer details (Meta hashes them in the browser).
+export function identify({ email, phone, full_name, city, country } = {}) {
+  if (!PIXEL_ID || typeof window === "undefined" || !window.fbq) return;
+  const [first, ...rest] = (full_name || "").trim().toLowerCase().split(/\s+/);
+  const data = {};
+  if (email) data.em = String(email).trim().toLowerCase();
+  if (phone) data.ph = String(phone).replace(/\D/g, "");
+  if (first) data.fn = first;
+  if (rest.length) data.ln = rest.join(" ");
+  if (city) data.ct = String(city).trim().toLowerCase().replace(/\s+/g, "");
+  if (country) data.country = String(country).trim().toLowerCase().slice(0, 2);
+  try {
+    window.fbq("init", PIXEL_ID, data);
+  } catch {
+    /* never break the shop */
+  }
+}
+
 function fire(method, name, params, eventID) {
+  mirrorToGA(name, params, eventID); // Google Analytics 4 gets the same events (no-op without a GA id)
   if (!PIXEL_ID || typeof window === "undefined" || !window.fbq) return;
   try {
     if (eventID) window.fbq(method, name, params || {}, { eventID });
@@ -106,6 +146,7 @@ export const addPaymentInfo = (cart, paymentMethod) =>
 
 // Purchase fires once per order (guarded in localStorage so a refresh doesn't double-count).
 export function purchase(order) {
+  identify(order);
   const key = `fb_purchase_${order.id}`;
   try {
     if (localStorage.getItem(key)) return;

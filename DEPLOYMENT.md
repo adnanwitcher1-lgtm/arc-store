@@ -1,83 +1,129 @@
-# Going live — deployment guide
+# Going live — deployment guide (Contabo VPS)
+
+Everything runs on your Contabo server (`167.86.77.100`) — no Render, no Vercel:
+
+```
+Browser ──► Nginx :443 ─┬─ www.jamshan.com  → React build  (/var/www/jamshan-store/frontend/dist)
+                        │                     + /sitemap.xml, /feeds/products.xml and WhatsApp/Facebook link previews
+                        │                       are proxied to Django
+                        └─ api.jamshan.com  → Gunicorn 127.0.0.1:8004 (Django API + /admin) → PostgreSQL jamshan_db
+```
+Ready-made files are in the `deploy/` folder: Nginx configs, env templates, `deploy.sh` (one-command update) and
+`backup-db.sh` (daily database backup).
 
 ## 1. Push to GitHub
-Both hosts below deploy from a git repo.
-
 ```bash
 cd arc-store
-git init
 git add .
-git commit -m "JH store"
+git commit -m "Contabo deployment, Meta events, SEO"
+git push origin main
 ```
-Create an empty repo on GitHub, then `git remote add origin <url>` and `git push -u origin main`.
-(`backend/venv/`, `frontend/node_modules/` and `frontend/dist/` should be git-ignored — the
-starter `.gitignore` files already handle this.)
+(`backend/venv/`, `frontend/node_modules/` and `frontend/dist/` are git-ignored; real `.env` files are never committed.)
 
-## 2. Backend → Render
-1. [render.com](https://render.com) → **New +** → **Postgres** → create a small paid instance (the free Postgres expires after 90 days — fine for testing, not for a client's live store).
-2. **New +** → **Web Service** → connect the GitHub repo, root directory `backend`.
-   - **Build command:** `pip install -r requirements.txt -r requirements-prod.txt && python manage.py collectstatic --noinput && python manage.py migrate`
-   - **Start command:** `gunicorn config.wsgi:application`
-3. Add environment variables on the service:
+## 2. DNS (Hostinger → jamshan.com → DNS records)
+Lower the TTL of the records below to **300** a few hours before the switch, then:
 
-   | Key | Value |
-   |---|---|
-   | `DJANGO_SECRET_KEY` | a long random string (generate one: `python -c "import secrets; print(secrets.token_urlsafe(50))"`) |
-   | `DJANGO_DEBUG` | `False` |
-   | `DJANGO_ALLOWED_HOSTS` | `yourdomain.com,api.yourdomain.com,your-service.onrender.com` |
-   | `CORS_ALLOWED_ORIGINS` | `https://yourdomain.com` |
-   | `DATABASE_URL` | auto-filled if you link the Postgres instance to this service |
+| Type | Name | Value |
+|---|---|---|
+| A | `@` | `167.86.77.100` (replaces the Vercel record) |
+| A | `www` | `167.86.77.100` (replaces the Vercel record) |
+| A | `api` | `167.86.77.100` (replaces the CNAME to onrender.com) |
 
-4. Deploy. Then run once, from Render's shell (or locally with `DATABASE_URL` pointed at the same Postgres): `python manage.py createsuperuser` and `python manage.py seed_store` (or add the client's real products instead of the demo set).
+Keep the Resend (email) records untouched. Check with `dig +short www.jamshan.com`.
 
-**Note on product images:** Render's web services don't guarantee the local disk survives a redeploy. Fine while you're setting things up; before real customers rely on it, move `MEDIA` storage to S3-compatible object storage (Cloudflare R2, Backblaze B2, or AWS S3) via `django-storages` — a next step, not blocking for a first launch.
+## 3. Backend (already on the server — just update it)
+The backend already runs as the `jamshan-store` service on port 8004 in `/var/www/jamshan-store`.
 
-## 3. Frontend → Vercel
-1. [vercel.com](https://vercel.com) → **New Project** → import the same repo, root directory `frontend`.
-2. Framework preset: Vite. Build command `npm run build`, output `dist` (Vercel usually detects this automatically).
-3. Add environment variable: `VITE_API_URL` = `https://api.yourdomain.com/api` (or the Render URL, before the domain is connected).
-4. Deploy.
+1. Compare `/var/www/jamshan-store/backend/.env` with `deploy/backend.env.example`; add any missing keys
+   (`FRONTEND_URL`, `CORS_ALLOWED_ORIGINS`, `DJANGO_ALLOWED_HOSTS` must contain the real domains).
+2. The `api.jamshan.com` Nginx block and the systemd service already exist (`deploy/nginx/jamshan-api.conf` and
+   `deploy/systemd/jamshan-store.service` are only for reference / a fresh server).
+3. Restart: `sudo systemctl restart jamshan-store`.
 
-## 4. Domain
-1. Buy a domain (Namecheap, GoDaddy, or a `.pk` via PKNIC).
-2. In Vercel: **Project → Settings → Domains** → add `yourdomain.com` and `www.yourdomain.com` → Vercel gives you the DNS records to add at your registrar.
-3. In Render: add a **Custom Domain** on the web service, e.g. `api.yourdomain.com` → Render gives you a CNAME to add at your registrar.
-4. Update `DJANGO_ALLOWED_HOSTS` and `CORS_ALLOWED_ORIGINS` on Render, and `VITE_API_URL` on Vercel, to the final domain — then redeploy both.
+Fresh server only: create the database (`sudo -u postgres createdb jamshan_db`, plus a user), clone the repo to
+`/var/www/jamshan-store`, `python3 -m venv venv`, `venv/bin/pip install -r backend/requirements.txt -r backend/requirements-prod.txt`,
+write `backend/.env`, `venv/bin/python backend/manage.py migrate`, `createsuperuser` (and `seed_store` for demo data),
+install the systemd unit, `systemctl enable --now jamshan-store`.
 
-## 5. Order notifications (email + WhatsApp)
+## 4. Frontend (Nginx serves the built files)
+One-time setup on the server:
 
-Without any setup, order emails just print to the console/logs — fine for testing, not for a
-real store. To send real emails:
+```bash
+# Node 22 (needed to build the React app)
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash - && sudo apt-get install -y nodejs
 
-1. Turn on 2-Step Verification on the Gmail account you want to send from.
-2. Go to [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) and create an **App Password** (not your normal Gmail password — Google blocks that for this).
-3. Set these on Render (or your `.env` locally):
+cd /var/www/jamshan-store && git pull origin main
+cp deploy/frontend.env.production.example frontend/.env.production
+nano frontend/.env.production          # VITE_API_URL, VITE_SITE_URL, Pixel / GA4 ids ...
 
-   | Key | Value |
-   |---|---|
-   | `EMAIL_HOST_USER` | the sending Gmail address |
-   | `EMAIL_HOST_PASSWORD` | the 16-character App Password |
-   | `DEFAULT_FROM_EMAIL` | same Gmail address |
-   | `ADMIN_EMAIL` | `mumtazahmadfaheem@gmail.com` (already the default) |
+# Nginx site for the storefront
+sudo cp deploy/nginx/jamshan-frontend.conf /etc/nginx/sites-available/jamshan-frontend
+sudo ln -s /etc/nginx/sites-available/jamshan-frontend /etc/nginx/sites-enabled/jamshan-frontend
 
-Once both `EMAIL_HOST_USER` and `EMAIL_HOST_PASSWORD` are set, every checkout sends the
-customer a confirmation and sends `ADMIN_EMAIL` a new-order alert automatically.
+# build + reload
+bash deploy/deploy.sh
+```
+`deploy.sh` also runs `nginx -t` before reloading, so a typo in the config can never take the other sites
+(sameermart.com, Keen Academy ...) down. The storefront block only matches `jamshan.com` / `www.jamshan.com`, so
+it does not touch your other projects.
 
-**Optional — WhatsApp alert on every order** (free, personal-use API, 2-minute setup):
-1. Save `+34 644 71 81 99` (CallMeBot's number) as a contact on the phone that owns `03431740756`.
-2. From WhatsApp, message that contact: `I allow callmebot to send me messages`.
-3. Within ~2 minutes you'll get a reply with an API key.
-4. Set `CALLMEBOT_APIKEY` to that key (on Render or in `.env`). Nothing else to change —
-   `CALLMEBOT_PHONE` already defaults to `923431740756`.
+Don't want Node on the server? Build on your PC (`cd frontend && npm ci && npm run build` with the same
+`.env.production`) and upload the result: `scp -r dist/* root@167.86.77.100:/var/www/jamshan-store/frontend/dist/`.
 
-Leave `CALLMEBOT_APIKEY` blank to skip WhatsApp alerts entirely — email still works either way.
+## 5. HTTPS (once DNS points to the server)
+```bash
+sudo certbot --nginx -d jamshan.com -d www.jamshan.com -d api.jamshan.com
+```
+Certbot adds the certificates and the http→https redirect to both Nginx blocks and renews them automatically.
+The bare `jamshan.com` redirects to `www.jamshan.com` (the canonical address used in `robots.txt`, the sitemap and
+`FRONTEND_URL`). Prefer the bare domain? Change it in `jamshan-frontend.conf`, `robots.txt`, `VITE_SITE_URL`
+and `FRONTEND_URL` together.
 
-## 6. Final checks before handing over
+## 6. Updating the site later
+```bash
+ssh root@167.86.77.100
+cd /var/www/jamshan-store && bash deploy/deploy.sh
+```
+(pulls from GitHub, installs backend packages, runs migrations, restarts Gunicorn, rebuilds the frontend, reloads Nginx).
+
+## 7. Backups (important — the VPS has no Auto Backup)
+```bash
+chmod +x /var/www/jamshan-store/deploy/backup-db.sh
+( crontab -l 2>/dev/null; echo "0 3 * * * /var/www/jamshan-store/deploy/backup-db.sh" ) | crontab -
+```
+Keeps the last 14 daily dumps in `/var/backups/jamshan`. Copy them off the server now and then
+(`scp`, or enable Contabo Auto Backup). Product images live on Cloudinary, not on the server.
+
+## 8. Order notifications (email + WhatsApp)
+Order emails are sent with **Resend** (HTTPS API). In `backend/.env`:
+
+| Key | Value |
+|---|---|
+| `RESEND_API_KEY` | your Resend API key (domain `jamshan.com` verified in Resend) |
+| `DEFAULT_FROM_EMAIL` | e.g. `JH Store <orders@jamshan.com>` |
+| `ADMIN_EMAIL` | the store owner's inbox for new-order alerts |
+
+Without `RESEND_API_KEY`, emails are only printed to the Gunicorn log (`journalctl -u jamshan-store`).
+
+**Optional — WhatsApp alert on every order** (free CallMeBot API):
+1. Save `+34 644 71 81 99` as a contact on the WhatsApp phone that should receive the alerts (the number in `CALLMEBOT_PHONE`).
+2. From WhatsApp message it: `I allow callmebot to send me messages` — you get an API key within ~2 minutes.
+3. Put the key in `CALLMEBOT_APIKEY` (backend `.env`) and restart `jamshan-store`.
+
+## 9. Final checks before handing over
 - Visit the live site in an incognito window: browse, add to cart, register, checkout.
+- Server checks (replace the domain if needed):
+  ```bash
+  curl -sI https://www.jamshan.com/ | head -3                       # 200, served by Nginx
+  curl -s  https://www.jamshan.com/sitemap.xml | head -5            # XML from Django
+  curl -s  https://www.jamshan.com/feeds/products.xml | head -8     # product feed
+  curl -s -A "facebookexternalhit/1.1" https://www.jamshan.com/product/<a-product-slug> | grep og:title   # share preview
+  curl -sI https://www.jamshan.com/some/unknown/page | head -1      # 200 (React shows its own 404 page)
+  ```
 - `/admin/` loads over `https://` and the padlock is green.
 - Change (or remove) the demo accounts created by `seed_store` if you seeded demo data on the production database.
 
-## 7. Handing the admin panel to the client
+## 10. Handing the admin panel to the client
 Give the client their own account — not your `admin` / `AdminPass123!` login.
 
 ```bash
@@ -95,12 +141,43 @@ or break the underlying system. Keep your own superuser account for maintenance.
 A short screen-share walking them through "add a product" and "check today's orders" goes a long way —
 the admin panel is only useful to them if they're comfortable in it.
 
-## 8. Meta (Facebook) Pixel
+## 11. Meta (Facebook) Pixel
 The storefront tracks these Meta Pixel events: `PageView`, `ViewContent`, `AddToCart`, `AddToWishlist`,
 `Search`, `InitiateCheckout`, `AddPaymentInfo`, `Purchase`, `CompleteRegistration`, `Lead`, `Contact`
 plus custom `ViewCategory`, `ViewCart`, `RemoveFromCart`.
 
 1. In Meta Events Manager copy your **Pixel ID**.
-2. Set `VITE_META_PIXEL_ID=<pixel id>` in the frontend environment (Vercel → Settings → Environment Variables, or `frontend/.env` on the VPS).
-3. Redeploy / rebuild the frontend (Vite bakes env vars in at build time).
+2. Set `VITE_META_PIXEL_ID=<pixel id>` in `frontend/.env.production` on the server.
+3. Run `bash deploy/deploy.sh` (Vite bakes env vars in at build time, so the frontend must be rebuilt).
 4. Verify with the *Meta Pixel Helper* Chrome extension or Events Manager → Test Events.
+
+### Server-side events (Conversions API) — recommended
+Browser pixels are blocked by ad-blockers and iOS privacy features, so `Purchase` is also sent from the Django backend
+with the same `event_id` (`order_<id>`) — Meta de-duplicates the two, so you never get double counts.
+
+1. Events Manager → your Pixel → **Settings → Conversions API → Generate access token**.
+2. In `backend/.env` on the server set:
+   `META_PIXEL_ID=<pixel id>` and `META_CAPI_ACCESS_TOKEN=<token>`, then `systemctl restart jamshan-store`.
+3. To test: set `META_TEST_EVENT_CODE=<code from Events Manager → Test events>`, place an order, check the event shows
+   as *Browser + Server* (de-duplicated). Then remove `META_TEST_EVENT_CODE`.
+
+## 12. SEO & digital marketing
+| What | Where | Used for |
+|---|---|---|
+| `sitemap.xml` (pages, categories, products + product images) | `https://yourdomain/sitemap.xml` | Google Search Console, Bing |
+| `robots.txt` (blocks cart/checkout/search duplicates) | `frontend/public/robots.txt` | crawlers |
+| Product feed (RSS, Google Merchant format) | `https://yourdomain/feeds/products.xml` | Google Merchant Center (free Shopping listings), Meta Commerce Catalog (Instagram/Facebook Shop, dynamic ads) |
+| Product / Breadcrumb / Organization / WebSite JSON-LD | automatic | rich results, price & stock in Google, sitelinks search box |
+| Google Analytics 4 | `VITE_GA_MEASUREMENT_ID` | same events as Meta (view_item, add_to_cart, begin_checkout, purchase …) |
+| Verification tags | `VITE_GOOGLE_SITE_VERIFICATION`, `VITE_BING_SITE_VERIFICATION`, `VITE_META_DOMAIN_VERIFICATION` | Search Console, Bing, Meta domain verification |
+| Social share previews | `/share/product/<slug>` (automatic via the Nginx config) | WhatsApp / Facebook / Twitter links show the product photo, name and price |
+
+Steps (after the domain is live):
+1. `robots.txt`, `VITE_SITE_URL` and `FRONTEND_URL` already use `https://www.jamshan.com` — change all three together if the domain differs.
+2. **Google Search Console** → add property → HTML tag → copy the `content` value into `VITE_GOOGLE_SITE_VERIFICATION` → `bash deploy/deploy.sh` → Verify → Sitemaps → submit `sitemap.xml`.
+3. **Bing Webmaster Tools** → "Import from Google Search Console" (or use `VITE_BING_SITE_VERIFICATION`).
+4. **Google Analytics 4** → create property → copy the `G-…` id into `VITE_GA_MEASUREMENT_ID` → `bash deploy/deploy.sh`; check Reports → Realtime.
+5. **Google Merchant Center** → Products → Feeds → Add feed → *Scheduled fetch* → URL `https://yourdomain/feeds/products.xml` (daily).
+6. **Meta Commerce Manager** → Catalog → Data sources → *Data feed* → *Scheduled feed* → same URL. Product ids match the Pixel `content_ids`, so dynamic ads work.
+7. **Meta Business Settings → Brand safety → Domains** → verify your domain (meta-tag method → `VITE_META_DOMAIN_VERIFICATION`).
+8. Test a product link in the Facebook Sharing Debugger (developers.facebook.com/tools/debug) — it should show the product photo and price.

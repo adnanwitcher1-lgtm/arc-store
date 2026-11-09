@@ -9,10 +9,38 @@ import ProductGrid from "../components/product/ProductGrid";
 import TrustBadges from "../components/product/TrustBadges";
 import { useCategories } from "../lib/useCategories";
 import { fetchProducts } from "../api/products";
+import { SITE } from "../lib/site";
 
 const reveal = {
   hidden: { opacity: 0, y: 24 },
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+};
+
+const ORIGIN = SITE.url || (typeof window !== "undefined" ? window.location.origin : "");
+
+// Organization + WebSite (enables the Google sitelinks search box).
+const homeJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${ORIGIN}/#organization`,
+      name: SITE.name,
+      url: ORIGIN,
+      logo: `${ORIGIN}/apple-touch-icon.png`,
+      email: SITE.email,
+      address: { "@type": "PostalAddress", addressLocality: "Faisalabad", addressCountry: "PK" },
+      contactPoint: [{ "@type": "ContactPoint", contactType: "customer service", telephone: `+${SITE.whatsapp}`, availableLanguage: ["en", "ur"], areaServed: "PK" }],
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${ORIGIN}/#website`,
+      url: ORIGIN,
+      name: SITE.name,
+      publisher: { "@id": `${ORIGIN}/#organization` },
+      potentialAction: { "@type": "SearchAction", target: `${ORIGIN}/shop?search={search_term_string}`, "query-input": "required name=search_term_string" },
+    },
+  ],
 };
 
 export default function Home() {
@@ -40,7 +68,11 @@ export default function Home() {
 
   return (
     <PageFade>
-      <Seo description="Shop watches, footwear, skincare, grooming and fashion at JH Store. Cash on delivery and fast shipping across Pakistan." keywords="online shopping pakistan, watches, shoes, skincare, grooming, fashion, faisalabad" />
+      <Seo
+        description="Shop watches, footwear, skincare, grooming and fashion at JH Store. Cash on delivery and fast shipping across Pakistan."
+        keywords="online shopping pakistan, watches, shoes, skincare, grooming, fashion, faisalabad"
+        jsonLd={homeJsonLd}
+      />
       <section className="relative min-h-[520px] overflow-hidden sm:min-h-[600px]">
         <div className="absolute inset-0 block">
           <img

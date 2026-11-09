@@ -10,7 +10,7 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { checkout } from "../api/orders";
 import { formatPrice } from "../lib/format";
-import { initiateCheckout, addPaymentInfo } from "../lib/metaPixel";
+import { initiateCheckout, addPaymentInfo, identify, getBrowserIds } from "../lib/metaPixel";
 
 const initialForm = {
   full_name: "", email: "", phone: "", address_line: "", city: "", state: "",
@@ -64,9 +64,10 @@ export default function Checkout() {
   async function handleSubmit(e) {
     e.preventDefault();
     setSubmitting(true);
+    identify(form);
     addPaymentInfo(cart, form.payment_method);
     try {
-      const order = await checkout(form);
+      const order = await checkout({ ...form, ...getBrowserIds() });
       await refresh();
       showToast("Order placed — thank you!");
       navigate(`/order-confirmation/${order.id}`);

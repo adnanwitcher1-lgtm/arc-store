@@ -11,6 +11,7 @@ from .models import (
     Category, Product, ProductOptionValue, Review, WishlistItem,
     Cart, CartItem, Order, OrderItem, ContactMessage,
 )
+from .meta_capi import send_purchase_event
 from .notifications import send_order_emails, send_whatsapp_alert
 from .serializers import (
     CategorySerializer, ProductListSerializer, ProductDetailSerializer,
@@ -248,7 +249,8 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
 
         details = CheckoutSerializer(data=request.data)
         details.is_valid(raise_exception=True)
-        data = details.validated_data
+        data = dict(details.validated_data)
+        tracking = {k: data.pop(k, "") for k in ("fbp", "fbc", "event_source_url")}
 
         subtotal = cart.subtotal
         shipping_fee = 0 if subtotal >= 5000 or subtotal == 0 else 250
@@ -270,6 +272,7 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
 
         send_order_emails(order)
         send_whatsapp_alert(order)
+        send_purchase_event(order, request, tracking)  # Meta Conversions API (no-op if not configured)
 
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 

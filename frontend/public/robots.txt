@@ -7,6 +7,13 @@ Disallow: /register
 Disallow: /orders
 Disallow: /order-confirmation/
 Disallow: /wishlist
+Disallow: /track-order
+# Internal search / sort / filter URLs create endless duplicate pages
+Disallow: /*?search=
+Disallow: /*?ordering=
+Disallow: /*?featured=
+Disallow: /*&page=
+Disallow: /*?page=
 
 # After your domain is live, replace with your real domain:
 Sitemap: https://www.jamshan.com/sitemap.xml

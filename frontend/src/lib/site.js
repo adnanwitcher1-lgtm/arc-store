@@ -2,7 +2,7 @@
 export const SITE = {
   name: "JH Store",
   // Public storefront URL (no trailing slash) — used for canonical links & social previews.
-  // Set VITE_SITE_URL=https://yourdomain.com on Vercel; falls back to the current origin.
+  // Set VITE_SITE_URL=https://yourdomain.com in frontend/.env.production; falls back to the current origin.
   url: (import.meta.env.VITE_SITE_URL || "").replace(/\/$/, ""),
   tagline: "Everyday, elevated",
   description: "JH Store — everyday essentials, elevated. Shop watches, footwear, skincare, grooming and fashion with cash on delivery across Pakistan.",

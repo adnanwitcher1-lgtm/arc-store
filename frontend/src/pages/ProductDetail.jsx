@@ -21,7 +21,7 @@ import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
-import { viewContent, addToCart as trackAddToCart, addToWishlist as trackAddToWishlist, initiateCheckout } from "../lib/metaPixel";
+import { viewContent, addToCart as trackAddToCart, addToWishlist as trackAddToWishlist } from "../lib/metaPixel";
 
 export default function ProductDetail() {
   const { slug } = useParams();
@@ -135,7 +135,6 @@ export default function ProductDetail() {
     try {
       await addItem(product.id, quantity, Object.values(selected).filter(Boolean));
       trackAddToCart(product, quantity);
-      if (goToCart) initiateCheckout({ items: [{ product, quantity }], subtotal: Number(product.price) * quantity });
       showToast(goToCart ? "Added — taking you to checkout" : `Added ${product.name} to cart`);
       if (goToCart) navigate("/cart");
     } catch {
