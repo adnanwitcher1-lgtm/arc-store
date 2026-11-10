@@ -1,15 +1,17 @@
 # Going live — deployment guide (Contabo VPS)
 
-Everything runs on your Contabo server (`167.86.77.100`) — no Render, no Vercel:
+Everything runs on your Contabo server (`167.86.77.100`) under **one domain** — no Render, no Vercel, no `api.` subdomain:
 
 ```
-Browser ──► Nginx :443 ─┬─ www.jamshan.com  → React build  (/var/www/jamshan-store/frontend/dist)
-                        │                     + /sitemap.xml, /feeds/products.xml and WhatsApp/Facebook link previews
-                        │                       are proxied to Django
-                        └─ api.jamshan.com  → Gunicorn 127.0.0.1:8004 (Django API + /admin) → PostgreSQL jamshan_db
+Browser ──► Nginx :443 (www.jamshan.com)
+              ├─ /            → React build  (/var/www/jamshan-store/frontend/dist)
+              ├─ /api/        → Gunicorn 127.0.0.1:8004 (Django REST API) → PostgreSQL jamshan_db
+              ├─ /admin/      → Gunicorn (Django admin panel)
+              ├─ /static/     → admin panel CSS/JS (backend/staticfiles)
+              └─ /sitemap.xml, /feeds/products.xml, WhatsApp/Facebook link previews → Django
 ```
-Ready-made files are in the `deploy/` folder: Nginx configs, env templates, `deploy.sh` (one-command update) and
-`backup-db.sh` (daily database backup).
+Admin panel: **https://www.jamshan.com/admin/**. Ready-made files are in the `deploy/` folder: Nginx config, env
+templates, systemd unit, `deploy.sh` (one-command update) and `backup-db.sh` (daily database backup).
 
 ## 1. Push to GitHub
 ```bash
@@ -21,29 +23,29 @@ git push origin main
 (`backend/venv/`, `frontend/node_modules/` and `frontend/dist/` are git-ignored; real `.env` files are never committed.)
 
 ## 2. DNS (Hostinger → jamshan.com → DNS records)
-Lower the TTL of the records below to **300** a few hours before the switch, then:
+Only two records are needed (delete any old Vercel / Render records for `@`, `www` and `api`):
 
-| Type | Name | Value |
-|---|---|---|
-| A | `@` | `167.86.77.100` (replaces the Vercel record) |
-| A | `www` | `167.86.77.100` (replaces the Vercel record) |
-| A | `api` | `167.86.77.100` (replaces the CNAME to onrender.com) |
+| Type | Name | Value | TTL |
+|---|---|---|---|
+| A | `@` | `167.86.77.100` | 300 |
+| A | `www` | `167.86.77.100` | 300 |
 
-Keep the Resend (email) records untouched. Check with `dig +short www.jamshan.com`.
+Keep the Resend (email) records untouched. Check with `dig +short www.jamshan.com @1.1.1.1`.
 
-## 3. Backend (already on the server — just update it)
-The backend already runs as the `jamshan-store` service on port 8004 in `/var/www/jamshan-store`.
+## 3. Backend (Django + Gunicorn on port 8004)
+In `/var/www/jamshan-store/backend/.env` (template: `deploy/backend.env.example`) the important lines are:
+```
+DJANGO_DEBUG=False
+DJANGO_ALLOWED_HOSTS=www.jamshan.com,jamshan.com,127.0.0.1,localhost
+CORS_ALLOWED_ORIGINS=https://www.jamshan.com,https://jamshan.com
+FRONTEND_URL=https://www.jamshan.com
+```
+Then `sudo systemctl restart jamshan-store`. The systemd unit (reference: `deploy/systemd/jamshan-store.service`) runs
+Gunicorn as `www-data`, so `.env` must be group-readable: `chgrp www-data backend/.env && chmod 640 backend/.env`.
 
-1. Compare `/var/www/jamshan-store/backend/.env` with `deploy/backend.env.example`; add any missing keys
-   (`FRONTEND_URL`, `CORS_ALLOWED_ORIGINS`, `DJANGO_ALLOWED_HOSTS` must contain the real domains).
-2. The `api.jamshan.com` Nginx block and the systemd service already exist (`deploy/nginx/jamshan-api.conf` and
-   `deploy/systemd/jamshan-store.service` are only for reference / a fresh server).
-3. Restart: `sudo systemctl restart jamshan-store`.
-
-Fresh server only: create the database (`sudo -u postgres createdb jamshan_db`, plus a user), clone the repo to
-`/var/www/jamshan-store`, `python3 -m venv venv`, `venv/bin/pip install -r backend/requirements.txt -r backend/requirements-prod.txt`,
-write `backend/.env`, `venv/bin/python backend/manage.py migrate`, `createsuperuser` (and `seed_store` for demo data),
-install the systemd unit, `systemctl enable --now jamshan-store`.
+Fresh server only: create the PostgreSQL user + database `jamshan_db`, clone the repo to `/var/www/jamshan-store`,
+`python3 -m venv backend/venv`, `backend/venv/bin/pip install -r backend/requirements.txt -r backend/requirements-prod.txt`,
+write `backend/.env`, `manage.py migrate`, `collectstatic`, `createsuperuser`, install the systemd unit.
 
 ## 4. Frontend (Nginx serves the built files)
 One-time setup on the server:
@@ -54,11 +56,11 @@ curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash - && sudo apt-get i
 
 cd /var/www/jamshan-store && git pull origin main
 cp deploy/frontend.env.production.example frontend/.env.production
-nano frontend/.env.production          # VITE_API_URL, VITE_SITE_URL, Pixel / GA4 ids ...
+nano frontend/.env.production          # VITE_API_URL=https://www.jamshan.com/api, VITE_SITE_URL, Pixel / GA4 ids ...
 
 # Nginx site for the storefront
-sudo cp deploy/nginx/jamshan-frontend.conf /etc/nginx/sites-available/jamshan-frontend
-sudo ln -s /etc/nginx/sites-available/jamshan-frontend /etc/nginx/sites-enabled/jamshan-frontend
+sudo cp deploy/nginx/jamshan-frontend.conf /etc/nginx/sites-available/jamshan
+sudo ln -s /etc/nginx/sites-available/jamshan /etc/nginx/sites-enabled/jamshan
 
 # build + reload
 bash deploy/deploy.sh
@@ -72,9 +74,9 @@ Don't want Node on the server? Build on your PC (`cd frontend && npm ci && npm r
 
 ## 5. HTTPS (once DNS points to the server)
 ```bash
-sudo certbot --nginx -d jamshan.com -d www.jamshan.com -d api.jamshan.com
+sudo certbot --nginx -d jamshan.com -d www.jamshan.com --redirect
 ```
-Certbot adds the certificates and the http→https redirect to both Nginx blocks and renews them automatically.
+Certbot adds the certificate and the http→https redirect to the Nginx blocks and renews them automatically.
 The bare `jamshan.com` redirects to `www.jamshan.com` (the canonical address used in `robots.txt`, the sitemap and
 `FRONTEND_URL`). Prefer the bare domain? Change it in `jamshan-frontend.conf`, `robots.txt`, `VITE_SITE_URL`
 and `FRONTEND_URL` together.
@@ -120,7 +122,7 @@ Without `RESEND_API_KEY`, emails are only printed to the Gunicorn log (`journalc
   curl -s -A "facebookexternalhit/1.1" https://www.jamshan.com/product/<a-product-slug> | grep og:title   # share preview
   curl -sI https://www.jamshan.com/some/unknown/page | head -1      # 200 (React shows its own 404 page)
   ```
-- `/admin/` loads over `https://` and the padlock is green.
+- `https://www.jamshan.com/admin/` loads (with styling) over `https://` and the padlock is green.
 - Change (or remove) the demo accounts created by `seed_store` if you seeded demo data on the production database.
 
 ## 10. Handing the admin panel to the client

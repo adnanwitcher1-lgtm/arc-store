@@ -41,5 +41,5 @@ nginx -t
 systemctl reload nginx
 
 echo "Done. Quick check:"
-curl -s -o /dev/null -w "  api sitemap  -> HTTP %{http_code}\n" http://127.0.0.1:8004/sitemap.xml -H "Host: api.jamshan.com" -H "X-Forwarded-Proto: https" || true
+curl -s -o /dev/null -w "  backend /api -> HTTP %{http_code}\n" http://127.0.0.1:8004/api/products/ -H "Host: www.jamshan.com" -H "X-Forwarded-Proto: https" || true
 systemctl is-active "$SERVICE" | sed 's/^/  gunicorn     -> /'
