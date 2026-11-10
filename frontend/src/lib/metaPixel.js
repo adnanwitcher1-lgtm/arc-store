@@ -1,7 +1,13 @@
 // Meta (Facebook) Pixel — single place for every tracking call.
-// Set VITE_META_PIXEL_ID in the frontend env (frontend/.env.production on the server, or .env locally). If it is empty, every function is a safe no-op.
+// Set VITE_META_PIXEL_ID (one ID, or several separated by commas) in the frontend env (frontend/.env.production on the server, or .env locally). If it is empty, every function is a safe no-op.
 
-const PIXEL_ID = (import.meta.env.VITE_META_PIXEL_ID || "").trim();
+// One or more Pixel IDs, comma separated: VITE_META_PIXEL_ID=1111111111,2222222222
+// Every event is sent to every Pixel listed.
+const PIXEL_IDS = (import.meta.env.VITE_META_PIXEL_ID || "")
+  .split(",")
+  .map((id) => id.trim())
+  .filter(Boolean);
+const PIXEL_ID = PIXEL_IDS[0] || "";
 const CURRENCY = "PKR";
 
 import { mirrorToGA } from "./ga4";
@@ -32,7 +38,7 @@ export function initPixel() {
   })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
   /* eslint-enable */
 
-  window.fbq("init", PIXEL_ID);
+  PIXEL_IDS.forEach((id) => window.fbq("init", id));
 }
 
 // ---- Browser ids (sent to the backend so server-side events match this visitor) ----
@@ -66,7 +72,7 @@ export function identify({ email, phone, full_name, city, country } = {}) {
   if (city) data.ct = String(city).trim().toLowerCase().replace(/\s+/g, "");
   if (country) data.country = String(country).trim().toLowerCase().slice(0, 2);
   try {
-    window.fbq("init", PIXEL_ID, data);
+    PIXEL_IDS.forEach((id) => window.fbq("init", id, data));
   } catch {
     /* never break the shop */
   }
